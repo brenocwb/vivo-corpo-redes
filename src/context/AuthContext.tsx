@@ -1,6 +1,7 @@
+
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User, UserRole } from '@/types';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,13 +32,11 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const signIn = async (email: string, password: string) => {
     try {
-      toast({
-        title: 'Conectando...',
+      toast('Conectando...', {
         description: 'Aguarde enquanto validamos suas credenciais'
       });
 
@@ -47,10 +46,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error) {
-        toast({
-          title: 'Erro ao conectar',
+        toast('Erro ao conectar', {
           description: error.message,
-          variant: 'destructive'
+          // Using proper Sonner toast styling
+          style: { backgroundColor: 'hsl(var(--destructive))' }
         });
         throw error;
       }
@@ -63,10 +62,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .single();
 
         if (userError) {
-          toast({
-            title: 'Erro ao buscar dados do usuário',
+          toast('Erro ao buscar dados do usuário', {
             description: userError.message,
-            variant: 'destructive'
+            style: { backgroundColor: 'hsl(var(--destructive))' }
           });
           throw userError;
         }
@@ -82,8 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         setUser(userObj);
 
-        toast({
-          title: 'Conectado com sucesso',
+        toast('Conectado com sucesso', {
           description: `Bem-vindo, ${userData.nome}!`
         });
 
@@ -91,10 +88,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error: any) {
       console.error('Erro ao fazer login:', error);
-      toast({
-        title: 'Falha ao conectar',
+      toast('Falha ao conectar', {
         description: 'Verifique seu e-mail e senha e tente novamente.',
-        variant: 'destructive'
+        style: { backgroundColor: 'hsl(var(--destructive))' }
       });
     }
   };
@@ -104,16 +100,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await supabase.auth.signOut();
       setUser(null);
       navigate('/login');
-      toast({
-        title: 'Desconectado',
+      toast('Desconectado', {
         description: 'Você saiu do sistema com sucesso.'
       });
     } catch (error) {
       console.error('Erro ao desconectar:', error);
-      toast({
-        title: 'Erro ao desconectar',
+      toast('Erro ao desconectar', {
         description: 'Não foi possível sair do sistema.',
-        variant: 'destructive'
+        style: { backgroundColor: 'hsl(var(--destructive))' }
       });
     }
   };
@@ -125,25 +119,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error) {
-        toast({
-          title: 'Erro ao solicitar recuperação de senha',
+        toast('Erro ao solicitar recuperação de senha', {
           description: error.message,
-          variant: 'destructive'
+          style: { backgroundColor: 'hsl(var(--destructive))' }
         });
         throw error;
       }
 
-      toast({
-        title: 'Recuperação de senha enviada',
+      toast('Recuperação de senha enviada', {
         description: 'Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha.'
       });
 
     } catch (error: any) {
       console.error('Erro ao solicitar recuperação de senha:', error);
-      toast({
-        title: 'Falha na recuperação de senha',
+      toast('Falha na recuperação de senha', {
         description: 'Tente novamente mais tarde.',
-        variant: 'destructive'
+        style: { backgroundColor: 'hsl(var(--destructive))' }
       });
     }
   };

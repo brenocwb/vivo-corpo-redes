@@ -6,10 +6,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Navigate, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 
+// Pages
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
+import Groups from "./pages/Groups";
+import Discipulado from "./pages/Discipulado";
+import AdminUsers from "./pages/Admin/Users";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +33,44 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
+// Admin Route component
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading, isAdmin } = useAuth();
+  
+  if (loading) {
+    return <div className="h-screen flex items-center justify-center">Carregando...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (!isAdmin()) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return children;
+};
+
+// Leader or Admin Route component
+const LeaderOrAdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading, isAdmin, isLider } = useAuth();
+  
+  if (loading) {
+    return <div className="h-screen flex items-center justify-center">Carregando...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (!isAdmin() && !isLider()) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return children;
+};
+
 // Auth wrapper to use auth context
 const AuthWrapper = () => {
   return (
@@ -35,11 +78,37 @@ const AuthWrapper = () => {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        
+        {/* Protected routes */}
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
         } />
+        <Route path="/perfil" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
+        <Route path="/grupos" element={
+          <ProtectedRoute>
+            <Groups />
+          </ProtectedRoute>
+        } />
+        <Route path="/discipulado" element={
+          <LeaderOrAdminRoute>
+            <Discipulado />
+          </LeaderOrAdminRoute>
+        } />
+        
+        {/* Admin routes */}
+        <Route path="/admin/usuarios" element={
+          <AdminRoute>
+            <AdminUsers />
+          </AdminRoute>
+        } />
+        
+        {/* Default routes */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
