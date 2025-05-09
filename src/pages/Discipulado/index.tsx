@@ -12,6 +12,7 @@ import DeleteDiscipuladoDialog from './DeleteDiscipuladoDialog';
 import EncontroDialog from './EncontroDialog';
 import HistoricoEncontrosDialog from './HistoricoEncontrosDialog';
 
+// Interfaces
 interface Discipulado {
   id: string;
   discipulador_id: string;
@@ -21,34 +22,21 @@ interface Discipulado {
   discipulo_nome: string;
 }
 
-export default function Discipulado() {
-  const { user, isAdmin, isLider } = useAuth();
+// Helper functions
+const useDiscipuladosList = (user: any) => {
+  const { isAdmin, isLider } = useAuth();
   const [discipulados, setDiscipulados] = useState<Discipulado[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [encontroDialogOpen, setEncontroDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [historicoDialogOpen, setHistoricoDialogOpen] = useState(false);
-  const [selectedDiscipulado, setSelectedDiscipulado] = useState<Discipulado | null>(null);
-
-  const isLeaderOrAdmin = isAdmin() || isLider();
 
   const fetchDiscipulados = async () => {
     setLoading(true);
     try {
-      // Consulta modificada para resolver o problema de tipos
+      // Separate fetches to avoid join errors
       let query = supabase
         .from('discipulados')
-        .select(`
-          id, 
-          discipulador_id,
-          discipulo_id,
-          criado_em,
-          discipulador:users!discipulados_discipulador_id_fkey(nome),
-          discipulo:users!discipulados_discipulo_id_fkey(nome)
-        `);
+        .select('id, discipulador_id, discipulo_id, criado_em');
 
-      // Se o usuário é líder mas não admin, mostrar apenas discipulados onde ele é o discipulador
+      // Filter by discipulador_id if user is lider but not admin
       if (isLider() && !isAdmin() && user) {
         query = query.eq('discipulador_id', user.id);
       }
@@ -58,21 +46,42 @@ export default function Discipulado() {
       if (error) throw error;
 
       if (data) {
-        const formattedDiscipulados: Discipulado[] = data.map(item => ({
-          id: item.id,
-          discipulador_id: item.discipulador_id,
-          discipulo_id: item.discipulo_id,
-          criado_em: item.criado_em,
-          discipulador_nome: item.discipulador?.nome || 'Não definido',
-          discipulo_nome: item.discipulo?.nome || 'Não definido'
-        }));
+        // Create an array to store the formatted discipulados
+        const formattedDiscipulados: Discipulado[] = [];
+        
+        // Process each discipulado and fetch related names
+        for (const item of data) {
+          // Fetch discipulador name
+          const { data: discipuladorData } = await supabase
+            .from('users')
+            .select('nome')
+            .eq('id', item.discipulador_id)
+            .single();
+          
+          // Fetch discipulo name
+          const { data: discipuloData } = await supabase
+            .from('users')
+            .select('nome')
+            .eq('id', item.discipulo_id)
+            .single();
+          
+          // Create formatted discipulado with names
+          const formattedDiscipulado: Discipulado = {
+            ...item,
+            discipulador_nome: discipuladorData?.nome || 'Não definido',
+            discipulo_nome: discipuloData?.nome || 'Não definido'
+          };
+          
+          formattedDiscipulados.push(formattedDiscipulado);
+        }
+        
         setDiscipulados(formattedDiscipulados);
       }
     } catch (error: any) {
       console.error('Erro ao buscar discipulados:', error);
       toast('Erro ao carregar discipulados', {
         description: error.message || 'Não foi possível obter a lista de discipulados.',
-        style: { backgroundColor: 'hsl(var(--destructive))' }
+        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
       });
     } finally {
       setLoading(false);
@@ -80,9 +89,26 @@ export default function Discipulado() {
   };
 
   useEffect(() => {
-    fetchDiscipulados();
+    if (user) {
+      fetchDiscipulados();
+    }
   }, [user]);
 
+  return { discipulados, loading, fetchDiscipulados };
+};
+
+export default function Discipulado() {
+  const { user, isAdmin, isLider } = useAuth();
+  const { discipulados, loading, fetchDiscipulados } = useDiscipuladosList(user);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [encontroDialogOpen, setEncontroDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [historicoDialogOpen, setHistoricoDialogOpen] = useState(false);
+  const [selectedDiscipulado, setSelectedDiscipulado] = useState<Discipulado | null>(null);
+
+  const isLeaderOrAdmin = isAdmin() || isLider();
+
+  // Event handlers
   const handleCreateDiscipulado = () => {
     setSelectedDiscipulado(null);
     setCreateDialogOpen(true);
@@ -195,7 +221,7 @@ export default function Discipulado() {
         </div>
       </div>
 
-      {/* Create Dialog */}
+      {/* Dialogs */}
       <DiscipuladoDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}

@@ -12,6 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
+// Props and interfaces
 interface DiscipuladoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -24,6 +25,7 @@ interface User {
   tipo_usuario?: string;
 }
 
+// Form schema for validation
 const formSchema = z.object({
   discipulador_id: z.string({
     required_error: 'Selecione um discipulador'
@@ -38,24 +40,11 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function DiscipuladoDialog({ 
-  open, 
-  onOpenChange, 
-  onDiscipuladoCreated 
-}: DiscipuladoDialogProps) {
-  const { user, isAdmin } = useAuth();
+// Custom hooks
+const useUsersList = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      discipulador_id: user?.id || '',
-      discipulo_id: '',
-    },
-  });
-
+  
   const loadUsers = async () => {
     setLoading(true);
     try {
@@ -70,12 +59,32 @@ export default function DiscipuladoDialog({
       console.error('Erro ao carregar usuários:', error);
       toast('Erro ao carregar usuários', {
         description: 'Não foi possível obter a lista de usuários.',
-        style: { backgroundColor: 'hsl(var(--destructive))' }
+        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
       });
     } finally {
       setLoading(false);
     }
   };
+  
+  return { users, loading, loadUsers };
+};
+
+export default function DiscipuladoDialog({ 
+  open, 
+  onOpenChange, 
+  onDiscipuladoCreated 
+}: DiscipuladoDialogProps) {
+  const { user, isAdmin } = useAuth();
+  const { users, loading, loadUsers } = useUsersList();
+  const [submitting, setSubmitting] = useState(false);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      discipulador_id: user?.id || '',
+      discipulo_id: '',
+    },
+  });
 
   useEffect(() => {
     if (open) {
@@ -87,23 +96,28 @@ export default function DiscipuladoDialog({
     }
   }, [open, user, isAdmin, form]);
 
+  const checkExistingDiscipulado = async (discipuladorId: string, discipuloId: string) => {
+    const { data, error } = await supabase
+      .from('discipulados')
+      .select('id')
+      .eq('discipulador_id', discipuladorId)
+      .eq('discipulo_id', discipuloId)
+      .maybeSingle();
+    
+    if (error) throw error;
+    return data !== null;
+  };
+
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
     try {
       // Check if this discipulado already exists
-      const { data: existingData, error: existingError } = await supabase
-        .from('discipulados')
-        .select('id')
-        .eq('discipulador_id', values.discipulador_id)
-        .eq('discipulo_id', values.discipulo_id)
-        .maybeSingle();
+      const exists = await checkExistingDiscipulado(values.discipulador_id, values.discipulo_id);
       
-      if (existingError) throw existingError;
-      
-      if (existingData) {
+      if (exists) {
         toast('Discipulado já existe', {
           description: 'Este relacionamento de discipulado já está registrado.',
-          style: { backgroundColor: 'hsl(var(--destructive))' }
+          style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
         });
         setSubmitting(false);
         return;
@@ -133,7 +147,7 @@ export default function DiscipuladoDialog({
       console.error('Erro ao criar discipulado:', error);
       toast('Erro ao criar discipulado', {
         description: error.message || 'Não foi possível criar o discipulado.',
-        style: { backgroundColor: 'hsl(var(--destructive))' }
+        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
       });
     } finally {
       setSubmitting(false);

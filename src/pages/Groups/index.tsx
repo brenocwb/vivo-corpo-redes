@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/context/AuthContext';
@@ -10,6 +11,7 @@ import GroupDialog from './GroupDialog';
 import DeleteGroupDialog from './DeleteGroupDialog';
 import ViewGroupMembersDialog from './ViewGroupMembersDialog';
 
+// Define interfaces for better type safety
 interface Group {
   id: string;
   nome: string;
@@ -18,6 +20,10 @@ interface Group {
   dia_semana?: string;
   criado_em: string;
   lider_nome?: string;
+}
+
+interface LeaderInfo {
+  nome: string;
 }
 
 export default function Groups() {
@@ -33,32 +39,36 @@ export default function Groups() {
   const fetchGroups = async () => {
     setLoading(true);
     try {
-      // Consulta modificada para especificar as relações
+      // Fetch groups with separate query for leader names to avoid join errors
       const { data: groupsData, error } = await supabase
         .from('grupos')
-        .select(`
-          id, 
-          nome, 
-          lider_id, 
-          local, 
-          dia_semana, 
-          criado_em,
-          users!grupos_lider_id_fkey (nome)
-        `)
+        .select('id, nome, lider_id, local, dia_semana, criado_em')
         .order('nome', { ascending: true });
 
       if (error) throw error;
 
       if (groupsData) {
-        const formattedGroups: Group[] = groupsData.map((group) => ({
-          id: group.id,
-          nome: group.nome,
-          lider_id: group.lider_id,
-          local: group.local,
-          dia_semana: group.dia_semana,
-          criado_em: group.criado_em,
-          lider_nome: group.users?.nome || 'Não definido'
-        }));
+        // Create an array to store the formatted groups
+        const formattedGroups: Group[] = [];
+        
+        // Process each group data and fetch leader name separately
+        for (const group of groupsData) {
+          // Fetch leader name from users table
+          const { data: leaderData } = await supabase
+            .from('users')
+            .select('nome')
+            .eq('id', group.lider_id)
+            .single();
+          
+          // Create formatted group with leader name
+          const formattedGroup: Group = {
+            ...group,
+            lider_nome: leaderData?.nome || 'Não definido'
+          };
+          
+          formattedGroups.push(formattedGroup);
+        }
+        
         setGroups(formattedGroups);
       }
     } catch (error: any) {
@@ -76,6 +86,7 @@ export default function Groups() {
     fetchGroups();
   }, []);
 
+  // Group management handlers
   const handleCreateGroup = () => {
     setSelectedGroup(null);
     setCreateDialogOpen(true);
