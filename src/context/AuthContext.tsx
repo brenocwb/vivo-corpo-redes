@@ -4,12 +4,14 @@ import { User, UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { toast as sonnerToast } from '@/components/ui/sonner';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   isAdmin: () => boolean;
   isLider: () => boolean;
   isMembro: () => boolean;
@@ -21,6 +23,7 @@ export const AuthContext = createContext<AuthContextType>({
   loading: true,
   signIn: async () => {},
   signOut: async () => {},
+  resetPassword: async () => {},
   isAdmin: () => false,
   isLider: () => false,
   isMembro: () => false,
@@ -35,8 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      toast({
-        title: 'Conectando...',
+      sonnerToast('Conectando...', {
         description: 'Aguarde enquanto validamos suas credenciais'
       });
       
@@ -46,8 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (error) {
-        toast({
-          title: 'Erro ao conectar',
+        sonnerToast('Erro ao conectar', {
           description: error.message,
           variant: 'destructive'
         });
@@ -63,33 +64,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .single();
         
         if (userError) {
-          toast({
-            title: 'Erro ao buscar dados do usuário',
+          sonnerToast('Erro ao buscar dados do usuário', {
             description: userError.message,
             variant: 'destructive'
           });
           throw userError;
         }
         
-        setUser({
+        const userObj: User = {
           id: userData.id,
           nome: userData.nome,
           email: userData.email,
           role: userData.tipo_usuario as UserRole,
-          grupo_id: userData.grupo_id
-        });
+          grupo_id: userData.grupo_id,
+          created_at: userData.criado_em
+        };
         
-        toast({
-          title: 'Conectado com sucesso',
+        setUser(userObj);
+        
+        sonnerToast('Conectado com sucesso', {
           description: `Bem-vindo, ${userData.nome}!`
         });
         
         navigate('/dashboard');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao fazer login:', error);
-      toast({
-        title: 'Falha ao conectar',
+      sonnerToast('Falha ao conectar', {
         description: 'Verifique seu e-mail e senha e tente novamente.',
         variant: 'destructive'
       });
@@ -101,12 +102,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await supabase.auth.signOut();
       setUser(null);
       navigate('/login');
-      toast({
-        title: 'Desconectado',
+      sonnerToast('Desconectado', {
         description: 'Você saiu do sistema com sucesso.'
       });
     } catch (error) {
       console.error('Erro ao desconectar:', error);
+      sonnerToast('Erro ao desconectar', {
+        description: 'Não foi possível sair do sistema.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+      
+      if (error) {
+        sonnerToast('Erro ao solicitar recuperação de senha', {
+          description: error.message,
+          variant: 'destructive'
+        });
+        throw error;
+      }
+      
+      sonnerToast('Recuperação de senha enviada', {
+        description: 'Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha.',
+      });
+      
+    } catch (error: any) {
+      console.error('Erro ao solicitar recuperação de senha:', error);
+      sonnerToast('Falha na recuperação de senha', {
+        description: 'Tente novamente mais tarde.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -130,13 +161,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .maybeSingle();
           
           if (userData) {
-            setUser({
+            const userObj: User = {
               id: userData.id,
               nome: userData.nome,
               email: userData.email,
               role: userData.tipo_usuario as UserRole,
-              grupo_id: userData.grupo_id
-            });
+              grupo_id: userData.grupo_id,
+              created_at: userData.criado_em
+            };
+            setUser(userObj);
           } else {
             setUser(null);
           }
@@ -159,13 +192,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .maybeSingle();
           
           if (userData) {
-            setUser({
+            const userObj: User = {
               id: userData.id,
               nome: userData.nome,
               email: userData.email,
               role: userData.tipo_usuario as UserRole,
-              grupo_id: userData.grupo_id
-            });
+              grupo_id: userData.grupo_id,
+              created_at: userData.criado_em
+            };
+            setUser(userObj);
           } else {
             setUser(null);
           }
@@ -189,6 +224,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading,
         signIn,
         signOut,
+        resetPassword,
         isAdmin,
         isLider,
         isMembro,

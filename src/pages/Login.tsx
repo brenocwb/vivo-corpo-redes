@@ -1,25 +1,29 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { user, signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
       await signIn(email, password);
-    } catch (error) {
-      console.error('Falha ao fazer login:', error);
+    } catch (error: any) {
+      setError(error.message || 'Falha ao fazer login. Verifique suas credenciais.');
     } finally {
       setLoading(false);
     }
@@ -42,12 +46,18 @@ export default function Login() {
       
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-xl text-center">Bem-vindo</CardTitle>
+          <CardTitle className="text-xl text-center">Bem-vindo!</CardTitle>
           <CardDescription className="text-center">
             Entre com suas credenciais para acessar sua conta
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
@@ -63,9 +73,9 @@ export default function Login() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Senha</Label>
-                <a href="#" className="text-xs text-corpovivo-600 hover:underline">
+                <Link to="/reset-password" className="text-xs text-corpovivo-600 hover:underline">
                   Esqueceu sua senha?
-                </a>
+                </Link>
               </div>
               <Input
                 id="password"
