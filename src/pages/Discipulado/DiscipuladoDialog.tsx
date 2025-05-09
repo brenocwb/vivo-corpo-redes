@@ -38,7 +38,7 @@ export default function DiscipuladoDialog({
   onDiscipuladoCreated 
 }: DiscipuladoDialogProps) {
   const { user, isAdmin } = useAuth();
-  const [users, setUsers] = useState<{ id: string; nome: string }[]>([]);
+  const [users, setUsers] = useState<{ id: string; nome: string; tipo_usuario?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
