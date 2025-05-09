@@ -3,11 +3,10 @@ import { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Edit, Trash2, RefreshCw, Users, CalendarPlus } from 'lucide-react';
+import { UserPlus, Trash2, RefreshCw, Users, CalendarPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
-import { User } from '@/types';
 import DiscipuladoDialog from './DiscipuladoDialog';
 import DeleteDiscipuladoDialog from './DeleteDiscipuladoDialog';
 import EncontroDialog from './EncontroDialog';
@@ -37,6 +36,7 @@ export default function Discipulado() {
   const fetchDiscipulados = async () => {
     setLoading(true);
     try {
+      // Consulta modificada para resolver o problema de tipos
       let query = supabase
         .from('discipulados')
         .select(`
@@ -44,11 +44,11 @@ export default function Discipulado() {
           discipulador_id,
           discipulo_id,
           criado_em,
-          discipulador:discipulador_id(nome),
-          discipulo:discipulo_id(nome)
+          discipulador:users!discipulados_discipulador_id_fkey(nome),
+          discipulo:users!discipulados_discipulo_id_fkey(nome)
         `);
 
-      // If user is a leader but not admin, only show discipulados where they are the discipulador
+      // Se o usuário é líder mas não admin, mostrar apenas discipulados onde ele é o discipulador
       if (isLider() && !isAdmin() && user) {
         query = query.eq('discipulador_id', user.id);
       }

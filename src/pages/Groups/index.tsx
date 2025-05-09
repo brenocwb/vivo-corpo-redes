@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/context/AuthContext';
@@ -34,7 +33,7 @@ export default function Groups() {
   const fetchGroups = async () => {
     setLoading(true);
     try {
-      // Get all groups with leader names
+      // Consulta modificada para especificar as relações
       const { data: groupsData, error } = await supabase
         .from('grupos')
         .select(`

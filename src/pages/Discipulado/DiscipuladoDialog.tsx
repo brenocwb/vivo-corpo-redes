@@ -18,6 +18,12 @@ interface DiscipuladoDialogProps {
   onDiscipuladoCreated: () => void;
 }
 
+interface User {
+  id: string;
+  nome: string;
+  tipo_usuario?: string;
+}
+
 const formSchema = z.object({
   discipulador_id: z.string({
     required_error: 'Selecione um discipulador'
@@ -38,7 +44,7 @@ export default function DiscipuladoDialog({
   onDiscipuladoCreated 
 }: DiscipuladoDialogProps) {
   const { user, isAdmin } = useAuth();
-  const [users, setUsers] = useState<{ id: string; nome: string; tipo_usuario?: string }[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -168,7 +174,7 @@ export default function DiscipuladoDialog({
                       ) : (
                         // Filtrando para mostrar apenas admin e líderes como discipuladores
                         users
-                          .filter(user => ['admin', 'lider'].includes(user.tipo_usuario))
+                          .filter(user => ['admin', 'lider'].includes(user.tipo_usuario || ''))
                           .map(user => (
                             <SelectItem key={user.id} value={user.id}>{user.nome}</SelectItem>
                           ))
