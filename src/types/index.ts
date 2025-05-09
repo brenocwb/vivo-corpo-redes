@@ -6,6 +6,7 @@ export interface User {
   email: string;
   nome: string;
   role: UserRole;
+  grupo_id?: string; // Adicionando o campo grupo_id (opcional)
   avatar_url?: string;
   created_at: string;
 }
