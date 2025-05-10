@@ -40,43 +40,50 @@ const useAuthHelpers = (setUser: React.Dispatch<React.SetStateAction<User | null
   const navigate = useNavigate();
   
   const fetchAndSetUserData = async (email: string | undefined) => {
-    if (!email) return;
-    
-    try {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
+  if (!email) return;
 
-      if (userError) {
-        toast('Erro ao buscar dados do usuário', {
-          description: userError.message,
-          style: { backgroundColor: 'hsl(var(--destructive))' }
-        });
-        throw userError;
-      }
+  try {
+    const { data: userData, error: userError } = await supabase
+      .from('usuarios') // <- tabela correta
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
 
-      if (userData) {
-        const userObj: User = {
-          id: userData.id,
-          nome: userData.nome,
-          email: userData.email,
-          role: userData.tipo_usuario as UserRole,
-          grupo_id: userData.grupo_id,
-          created_at: userData.criado_em
-        };
-
-        setUser(userObj);
-
-        toast('Conectado com sucesso', {
-          description: `Bem-vindo, ${userData.nome}!`
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao buscar dados do usuário:', error);
+    if (userError) {
+      toast('Erro ao buscar dados do usuário', {
+        description: userError.message,
+        style: { backgroundColor: 'hsl(var(--destructive))' }
+      });
+      throw userError;
     }
-  };
+
+    if (!userData) {
+      toast('Usuário não encontrado', {
+        description: 'Verifique com seu líder se seu cadastro foi feito.',
+        style: { backgroundColor: 'hsl(var(--destructive))' }
+      });
+      return;
+    }
+
+    const userObj: User = {
+      id: userData.id,
+      nome: userData.nome,
+      email: userData.email,
+      role: userData.tipo_usuario as UserRole,
+      grupo_id: userData.grupo_id,
+      created_at: userData.criado_em
+    };
+
+    setUser(userObj);
+
+    toast('Conectado com sucesso', {
+      description: `Bem-vindo, ${userData.nome}!`
+    });
+  } catch (error) {
+    console.error('Erro ao buscar dados do usuário:', error);
+  }
+};
+
   
   return { fetchAndSetUserData, navigate };
 };
