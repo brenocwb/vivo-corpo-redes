@@ -29,43 +29,16 @@ export const AuthContext = createContext<AuthContextType>({
   getUserRole: () => null,
 });
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+// Separate hooks and utilities to make the component more focused
+const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  return { user, setUser, loading, setLoading };
+};
+
+const useAuthHelpers = (setUser: React.Dispatch<React.SetStateAction<User | null>>) => {
   const navigate = useNavigate();
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      toast('Conectando...', {
-        description: 'Aguarde enquanto validamos suas credenciais'
-      });
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        toast('Erro ao conectar', {
-          description: error.message,
-          style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
-        });
-        throw error;
-      }
-
-      if (data?.user) {
-        await fetchAndSetUserData(data.user.email);
-        navigate('/dashboard');
-      }
-    } catch (error: any) {
-      console.error('Erro ao fazer login:', error);
-      toast('Falha ao conectar', {
-        description: 'Verifique seu e-mail e senha e tente novamente.',
-        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
-      });
-    }
-  };
-
+  
   const fetchAndSetUserData = async (email: string | undefined) => {
     if (!email) return;
     
@@ -79,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (userError) {
         toast('Erro ao buscar dados do usuário', {
           description: userError.message,
-          style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
+          style: { backgroundColor: 'hsl(var(--destructive))' }
         });
         throw userError;
       }
@@ -104,6 +77,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Erro ao buscar dados do usuário:', error);
     }
   };
+  
+  return { fetchAndSetUserData, navigate };
+};
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const { user, setUser, loading, setLoading } = useAuthState();
+  const { fetchAndSetUserData, navigate } = useAuthHelpers(setUser);
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      toast('Conectando...', {
+        description: 'Aguarde enquanto validamos suas credenciais'
+      });
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        toast('Erro ao conectar', {
+          description: error.message,
+          style: { backgroundColor: 'hsl(var(--destructive))' }
+        });
+        throw error;
+      }
+
+      if (data?.user) {
+        await fetchAndSetUserData(data.user.email);
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
+      console.error('Erro ao fazer login:', error);
+      toast('Falha ao conectar', {
+        description: 'Verifique seu e-mail e senha e tente novamente.',
+        style: { backgroundColor: 'hsl(var(--destructive))' }
+      });
+    }
+  };
 
   const signOut = async () => {
     try {
@@ -117,7 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Erro ao desconectar:', error);
       toast('Erro ao desconectar', {
         description: 'Não foi possível sair do sistema.',
-        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
+        style: { backgroundColor: 'hsl(var(--destructive))' }
       });
     }
   };
@@ -131,7 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         toast('Erro ao solicitar recuperação de senha', {
           description: error.message,
-          style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
+          style: { backgroundColor: 'hsl(var(--destructive))' }
         });
         throw error;
       }
@@ -144,7 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Erro ao solicitar recuperação de senha:', error);
       toast('Falha na recuperação de senha', {
         description: 'Tente novamente mais tarde.',
-        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
+        style: { backgroundColor: 'hsl(var(--destructive))' }
       });
     }
   };
