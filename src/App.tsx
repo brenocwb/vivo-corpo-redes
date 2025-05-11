@@ -52,9 +52,9 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
-// Leader or Admin Route component
-const LeaderOrAdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, isAdmin, isLider } = useAuth();
+// Discipulador or Admin Route component
+const DiscipuladorOrAdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading, isAdmin, isDiscipulador } = useAuth();
   
   if (loading) {
     return <div className="h-screen flex items-center justify-center">Carregando...</div>;
@@ -64,7 +64,7 @@ const LeaderOrAdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
   
-  if (!isAdmin() && !isLider()) {
+  if (!isAdmin() && !isDiscipulador()) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -96,9 +96,9 @@ const AuthWrapper = () => {
           </ProtectedRoute>
         } />
         <Route path="/discipulado" element={
-          <LeaderOrAdminRoute>
+          <DiscipuladorOrAdminRoute>
             <Discipulado />
-          </LeaderOrAdminRoute>
+          </DiscipuladorOrAdminRoute>
         } />
         
         {/* Admin routes */}

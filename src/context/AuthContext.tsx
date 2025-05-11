@@ -2,7 +2,7 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User, UserRole } from '@/types';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
@@ -12,8 +12,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   isAdmin: () => boolean;
-  isLider: () => boolean;
-  isMembro: () => boolean;
+  isDiscipulador: () => boolean;  // Atualizado de isLider
+  isDiscipulo: () => boolean;     // Atualizado de isMembro
   getUserRole: () => UserRole | null;
 }
 
@@ -24,8 +24,8 @@ export const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   resetPassword: async () => {},
   isAdmin: () => false,
-  isLider: () => false,
-  isMembro: () => false,
+  isDiscipulador: () => false,
+  isDiscipulo: () => false,
   getUserRole: () => null,
 });
 
@@ -44,7 +44,7 @@ const useAuthHelpers = (setUser: React.Dispatch<React.SetStateAction<User | null
 
   try {
     const { data: userData, error: userError } = await supabase
-      .from('usuarios') // <- tabela correta
+      .from('users')
       .select('*')
       .eq('email', email)
       .maybeSingle();
@@ -168,10 +168,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // User role helper functions
+  // User role helper functions - atualizados para novos tipos
   const isAdmin = () => user?.role === 'admin';
-  const isLider = () => user?.role === 'lider';
-  const isMembro = () => user?.role === 'membro';
+  const isDiscipulador = () => user?.role === 'discipulador' || user?.role === 'lider'; // Suporta ambos temporariamente
+  const isDiscipulo = () => user?.role === 'discipulo' || user?.role === 'membro'; // Suporta ambos temporariamente 
   const getUserRole = () => user?.role || null;
 
   // Initialize auth state
@@ -220,8 +220,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signOut,
         resetPassword,
         isAdmin,
-        isLider,
-        isMembro,
+        isDiscipulador,
+        isDiscipulo,
         getUserRole,
       }}
     >

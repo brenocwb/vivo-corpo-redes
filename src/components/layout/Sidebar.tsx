@@ -21,7 +21,7 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
-  const { user, isAdmin, isLider, signOut } = useAuth();
+  const { user, isAdmin, isDiscipulador, signOut } = useAuth();
 
   const AdminLinks = () => (
     <>
@@ -36,8 +36,8 @@ export function Sidebar({ className }: SidebarProps) {
       </li>
       <li>
         <Link 
-          to="/usuarios" 
-          className={cn('nav-link', location.pathname.startsWith('/usuarios') && 'nav-link-active')}
+          to="/admin/usuarios" 
+          className={cn('nav-link', location.pathname.startsWith('/admin/usuarios') && 'nav-link-active')}
         >
           <Users className="h-5 w-5" />
           <span>Usuários</span>
@@ -54,8 +54,8 @@ export function Sidebar({ className }: SidebarProps) {
       </li>
       <li>
         <Link 
-          to="/discipulados" 
-          className={cn('nav-link', location.pathname.startsWith('/discipulados') && 'nav-link-active')}
+          to="/discipulado" 
+          className={cn('nav-link', location.pathname.startsWith('/discipulado') && 'nav-link-active')}
         >
           <Users className="h-5 w-5" />
           <span>Discipulados</span>
@@ -91,7 +91,7 @@ export function Sidebar({ className }: SidebarProps) {
     </>
   );
 
-  const LiderLinks = () => (
+  const DiscipuladorLinks = () => (
     <>
       <li>
         <Link 
@@ -150,7 +150,7 @@ export function Sidebar({ className }: SidebarProps) {
     </>
   );
 
-  const MembroLinks = () => (
+  const DiscipuloLinks = () => (
     <>
       <li>
         <Link 
@@ -232,9 +232,9 @@ export function Sidebar({ className }: SidebarProps) {
           <ul className="space-y-1">
             {isAdmin() ? <AdminLinks /> : null}
             
-            {isLider() && !isAdmin() ? <LiderLinks /> : null}
+            {isDiscipulador() && !isAdmin() ? <DiscipuladorLinks /> : null}
             
-            {!isAdmin() && !isLider() ? <MembroLinks /> : null}
+            {!isAdmin() && !isDiscipulador() ? <DiscipuloLinks /> : null}
           </ul>
         </nav>
       </div>

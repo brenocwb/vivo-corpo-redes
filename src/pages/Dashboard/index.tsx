@@ -6,13 +6,13 @@ import MembroDashboard from './MembroDashboard';
 import { Layout } from '@/components/layout/Layout';
 
 export default function Dashboard() {
-  const { isAdmin, isLider } = useAuth();
+  const { isAdmin, isDiscipulador } = useAuth();
   
   return (
     <Layout>
       {isAdmin() ? (
         <AdminDashboard />
-      ) : isLider() ? (
+      ) : isDiscipulador() ? (
         <LiderDashboard />
       ) : (
         <MembroDashboard />

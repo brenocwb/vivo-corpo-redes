@@ -1,12 +1,12 @@
 
-export type UserRole = 'admin' | 'lider' | 'membro';
+export type UserRole = 'admin' | 'lider' | 'membro' | 'discipulador' | 'discipulo';
 
 export interface User {
   id: string;
   email: string;
   nome: string;
   role: UserRole;
-  grupo_id?: string; // Adicionando o campo grupo_id (opcional)
+  grupo_id?: string;
   avatar_url?: string;
   created_at: string;
 }
