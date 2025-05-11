@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import Groups from "./pages/Groups";
 import Discipulado from "./pages/Discipulado";
 import AdminUsers from "./pages/Admin/Users";
+import Planos from "./pages/Planos";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +100,11 @@ const AuthWrapper = () => {
           <DiscipuladorOrAdminRoute>
             <Discipulado />
           </DiscipuladorOrAdminRoute>
+        } />
+        <Route path="/planos" element={
+          <ProtectedRoute>
+            <Planos />
+          </ProtectedRoute>
         } />
         
         {/* Admin routes */}

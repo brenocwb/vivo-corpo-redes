@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { User, UserRole } from '@/types';
 
@@ -22,11 +22,12 @@ type UserFormValues = z.infer<typeof userSchema>;
 
 interface EditUserDialogProps {
   user: User;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onUserUpdated: () => void;
 }
 
-export function EditUserDialog({ user, onClose, onUserUpdated }: EditUserDialogProps) {
+export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: EditUserDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<UserFormValues>({
@@ -67,7 +68,7 @@ export function EditUserDialog({ user, onClose, onUserUpdated }: EditUserDialogP
       });
       
       onUserUpdated();
-      onClose();
+      onOpenChange(false);
     } catch (error: any) {
       console.error('Erro ao atualizar usuário:', error);
       toast('Erro ao atualizar usuário', {
@@ -145,7 +146,7 @@ export function EditUserDialog({ user, onClose, onUserUpdated }: EditUserDialogP
           />
           
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting}>
@@ -157,3 +158,6 @@ export function EditUserDialog({ user, onClose, onUserUpdated }: EditUserDialogP
     </DialogContent>
   );
 }
+
+// Adicionado para compatibilidade com importações existentes
+export default EditUserDialog;

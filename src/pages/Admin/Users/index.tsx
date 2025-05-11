@@ -5,12 +5,12 @@ import { Navigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { UserPlus, Edit, Trash2, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { User, UserRole } from '@/types';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
 import CreateUserDialog from './CreateUserDialog';
-import EditUserDialog from './EditUserDialog';
+import { EditUserDialog } from './EditUserDialog';
 import DeleteUserDialog from './DeleteUserDialog';
 
 export default function AdminUsers() {

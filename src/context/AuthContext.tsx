@@ -1,9 +1,10 @@
 
-import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { User, UserRole } from '@/types';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useAuthState } from '@/hooks/useAuthState';
+import { useAuthHelpers, useRoleHelpers } from '@/hooks/useAuthHelpers';
 
 interface AuthContextType {
   user: User | null;
@@ -29,67 +30,10 @@ export const AuthContext = createContext<AuthContextType>({
   getUserRole: () => null,
 });
 
-// Separate hooks and utilities to make the component more focused
-const useAuthState = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  return { user, setUser, loading, setLoading };
-};
-
-const useAuthHelpers = (setUser: React.Dispatch<React.SetStateAction<User | null>>) => {
-  const navigate = useNavigate();
-  
-  const fetchAndSetUserData = async (email: string | undefined) => {
-  if (!email) return;
-
-  try {
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (userError) {
-      toast('Erro ao buscar dados do usuário', {
-        description: userError.message,
-        style: { backgroundColor: 'hsl(var(--destructive))' }
-      });
-      throw userError;
-    }
-
-    if (!userData) {
-      toast('Usuário não encontrado', {
-        description: 'Verifique com seu líder se seu cadastro foi feito.',
-        style: { backgroundColor: 'hsl(var(--destructive))' }
-      });
-      return;
-    }
-
-    const userObj: User = {
-      id: userData.id,
-      nome: userData.nome,
-      email: userData.email,
-      role: userData.tipo_usuario as UserRole,
-      grupo_id: userData.grupo_id,
-      created_at: userData.criado_em
-    };
-
-    setUser(userObj);
-
-    toast('Conectado com sucesso', {
-      description: `Bem-vindo, ${userData.nome}!`
-    });
-  } catch (error) {
-    console.error('Erro ao buscar dados do usuário:', error);
-  }
-};
-  
-  return { fetchAndSetUserData, navigate };
-};
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { user, setUser, loading, setLoading } = useAuthState();
   const { fetchAndSetUserData, navigate } = useAuthHelpers(setUser);
+  const { isAdmin, isDiscipulador, isDiscipulo, getUserRole } = useRoleHelpers(user);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -105,7 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         toast('Erro ao conectar', {
           description: error.message,
-          style: { backgroundColor: 'hsl(var(--destructive))' }
+          style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
         });
         throw error;
       }
@@ -118,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Erro ao fazer login:', error);
       toast('Falha ao conectar', {
         description: 'Verifique seu e-mail e senha e tente novamente.',
-        style: { backgroundColor: 'hsl(var(--destructive))' }
+        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
       });
     }
   };
@@ -135,7 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Erro ao desconectar:', error);
       toast('Erro ao desconectar', {
         description: 'Não foi possível sair do sistema.',
-        style: { backgroundColor: 'hsl(var(--destructive))' }
+        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
       });
     }
   };
@@ -149,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         toast('Erro ao solicitar recuperação de senha', {
           description: error.message,
-          style: { backgroundColor: 'hsl(var(--destructive))' }
+          style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
         });
         throw error;
       }
@@ -162,16 +106,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Erro ao solicitar recuperação de senha:', error);
       toast('Falha na recuperação de senha', {
         description: 'Tente novamente mais tarde.',
-        style: { backgroundColor: 'hsl(var(--destructive))' }
+        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
       });
     }
   };
-
-  // User role helper functions - atualizados para novos tipos
-  const isAdmin = () => user?.role === 'admin';
-  const isDiscipulador = () => user?.role === 'discipulador' || user?.role === 'lider'; // Suporta ambos temporariamente
-  const isDiscipulo = () => user?.role === 'discipulo' || user?.role === 'membro'; // Suporta ambos temporariamente 
-  const getUserRole = () => user?.role || null;
 
   // Initialize auth state
   useEffect(() => {

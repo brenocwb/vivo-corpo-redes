@@ -12,7 +12,7 @@ interface DiscipuladorSelectProps {
   loading: boolean;
 }
 
-export const DiscipuladorSelect = ({ control, users, loading }: DiscipuladorSelectProps) => {
+export function DiscipuladorSelect({ control, users, loading }: DiscipuladorSelectProps) {
   const { user, isAdmin } = useAuth();
   
   return (
@@ -53,4 +53,7 @@ export const DiscipuladorSelect = ({ control, users, loading }: DiscipuladorSele
       )}
     />
   );
-};
+}
+
+// Exportação padrão para compatibilidade com importações existentes
+export default DiscipuladorSelect;
