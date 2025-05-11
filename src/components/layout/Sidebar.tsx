@@ -8,12 +8,30 @@ import {
   Users, 
   BookOpen, 
   MessageSquare, 
-  BarChartHorizontal, 
   Settings, 
   LogOut, 
   Folder,
   User
 } from 'lucide-react';
+
+interface NavLinkProps {
+  to: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+  isActive: boolean;
+}
+
+const NavLink = ({ to, icon: Icon, children, isActive }: NavLinkProps) => (
+  <li>
+    <Link 
+      to={to} 
+      className={cn('nav-link', isActive && 'nav-link-active')}
+    >
+      <Icon className="h-5 w-5" />
+      <span>{children}</span>
+    </Link>
+  </li>
+);
 
 interface SidebarProps {
   className?: string;
@@ -23,182 +41,10 @@ export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
   const { user, isAdmin, isDiscipulador, signOut } = useAuth();
 
-  const AdminLinks = () => (
-    <>
-      <li>
-        <Link 
-          to="/dashboard" 
-          className={cn('nav-link', location.pathname === '/dashboard' && 'nav-link-active')}
-        >
-          <Home className="h-5 w-5" />
-          <span>Dashboard</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/admin/usuarios" 
-          className={cn('nav-link', location.pathname.startsWith('/admin/usuarios') && 'nav-link-active')}
-        >
-          <Users className="h-5 w-5" />
-          <span>Usuários</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/grupos" 
-          className={cn('nav-link', location.pathname.startsWith('/grupos') && 'nav-link-active')}
-        >
-          <Folder className="h-5 w-5" />
-          <span>Grupos</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/discipulado" 
-          className={cn('nav-link', location.pathname.startsWith('/discipulado') && 'nav-link-active')}
-        >
-          <Users className="h-5 w-5" />
-          <span>Discipulados</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/planos" 
-          className={cn('nav-link', location.pathname.startsWith('/planos') && 'nav-link-active')}
-        >
-          <BookOpen className="h-5 w-5" />
-          <span>Planos</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/comunidade" 
-          className={cn('nav-link', location.pathname.startsWith('/comunidade') && 'nav-link-active')}
-        >
-          <MessageSquare className="h-5 w-5" />
-          <span>Comunidade</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/configuracoes" 
-          className={cn('nav-link', location.pathname === '/configuracoes' && 'nav-link-active')}
-        >
-          <Settings className="h-5 w-5" />
-          <span>Configurações</span>
-        </Link>
-      </li>
-    </>
-  );
-
-  const DiscipuladorLinks = () => (
-    <>
-      <li>
-        <Link 
-          to="/dashboard" 
-          className={cn('nav-link', location.pathname === '/dashboard' && 'nav-link-active')}
-        >
-          <Home className="h-5 w-5" />
-          <span>Dashboard</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/meus-discipulos" 
-          className={cn('nav-link', location.pathname.startsWith('/meus-discipulos') && 'nav-link-active')}
-        >
-          <Users className="h-5 w-5" />
-          <span>Meus Discípulos</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/meu-grupo" 
-          className={cn('nav-link', location.pathname.startsWith('/meu-grupo') && 'nav-link-active')}
-        >
-          <Folder className="h-5 w-5" />
-          <span>Meu Grupo</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/planos" 
-          className={cn('nav-link', location.pathname.startsWith('/planos') && 'nav-link-active')}
-        >
-          <BookOpen className="h-5 w-5" />
-          <span>Planos</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/comunidade" 
-          className={cn('nav-link', location.pathname.startsWith('/comunidade') && 'nav-link-active')}
-        >
-          <MessageSquare className="h-5 w-5" />
-          <span>Comunidade</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/perfil" 
-          className={cn('nav-link', location.pathname === '/perfil' && 'nav-link-active')}
-        >
-          <User className="h-5 w-5" />
-          <span>Meu Perfil</span>
-        </Link>
-      </li>
-    </>
-  );
-
-  const DiscipuloLinks = () => (
-    <>
-      <li>
-        <Link 
-          to="/dashboard" 
-          className={cn('nav-link', location.pathname === '/dashboard' && 'nav-link-active')}
-        >
-          <Home className="h-5 w-5" />
-          <span>Dashboard</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/meu-plano" 
-          className={cn('nav-link', location.pathname.startsWith('/meu-plano') && 'nav-link-active')}
-        >
-          <BookOpen className="h-5 w-5" />
-          <span>Meu Plano</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/meu-grupo" 
-          className={cn('nav-link', location.pathname.startsWith('/meu-grupo') && 'nav-link-active')}
-        >
-          <Folder className="h-5 w-5" />
-          <span>Meu Grupo</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/comunidade" 
-          className={cn('nav-link', location.pathname.startsWith('/comunidade') && 'nav-link-active')}
-        >
-          <MessageSquare className="h-5 w-5" />
-          <span>Comunidade</span>
-        </Link>
-      </li>
-      <li>
-        <Link 
-          to="/perfil" 
-          className={cn('nav-link', location.pathname === '/perfil' && 'nav-link-active')}
-        >
-          <User className="h-5 w-5" />
-          <span>Meu Perfil</span>
-        </Link>
-      </li>
-    </>
-  );
+  const isPathActive = (path: string) => {
+    if (path === '/dashboard') return location.pathname === path;
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <div className={cn('pb-4 w-64 bg-white dark:bg-gray-800 border-r', className)}>
@@ -230,11 +76,137 @@ export function Sidebar({ className }: SidebarProps) {
         
         <nav>
           <ul className="space-y-1">
-            {isAdmin() ? <AdminLinks /> : null}
+            {/* Dashboard link for all users */}
+            <NavLink 
+              to="/dashboard" 
+              icon={Home}
+              isActive={isPathActive('/dashboard')}
+            >
+              Dashboard
+            </NavLink>
             
-            {isDiscipulador() && !isAdmin() ? <DiscipuladorLinks /> : null}
+            {/* Admin links */}
+            {isAdmin() && (
+              <>
+                <NavLink 
+                  to="/admin/usuarios" 
+                  icon={Users}
+                  isActive={isPathActive('/admin/usuarios')}
+                >
+                  Usuários
+                </NavLink>
+                <NavLink 
+                  to="/grupos" 
+                  icon={Folder}
+                  isActive={isPathActive('/grupos')}
+                >
+                  Grupos
+                </NavLink>
+                <NavLink 
+                  to="/discipulado" 
+                  icon={Users}
+                  isActive={isPathActive('/discipulado')}
+                >
+                  Discipulados
+                </NavLink>
+                <NavLink 
+                  to="/planos" 
+                  icon={BookOpen}
+                  isActive={isPathActive('/planos')}
+                >
+                  Planos
+                </NavLink>
+                <NavLink 
+                  to="/comunidade" 
+                  icon={MessageSquare}
+                  isActive={isPathActive('/comunidade')}
+                >
+                  Comunidade
+                </NavLink>
+                <NavLink 
+                  to="/configuracoes" 
+                  icon={Settings}
+                  isActive={isPathActive('/configuracoes')}
+                >
+                  Configurações
+                </NavLink>
+              </>
+            )}
             
-            {!isAdmin() && !isDiscipulador() ? <DiscipuloLinks /> : null}
+            {/* Discipulador links */}
+            {isDiscipulador() && !isAdmin() && (
+              <>
+                <NavLink 
+                  to="/meus-discipulos" 
+                  icon={Users}
+                  isActive={isPathActive('/meus-discipulos')}
+                >
+                  Meus Discípulos
+                </NavLink>
+                <NavLink 
+                  to="/meu-grupo" 
+                  icon={Folder}
+                  isActive={isPathActive('/meu-grupo')}
+                >
+                  Meu Grupo
+                </NavLink>
+                <NavLink 
+                  to="/planos" 
+                  icon={BookOpen}
+                  isActive={isPathActive('/planos')}
+                >
+                  Planos
+                </NavLink>
+                <NavLink 
+                  to="/comunidade" 
+                  icon={MessageSquare}
+                  isActive={isPathActive('/comunidade')}
+                >
+                  Comunidade
+                </NavLink>
+                <NavLink 
+                  to="/perfil" 
+                  icon={User}
+                  isActive={isPathActive('/perfil')}
+                >
+                  Meu Perfil
+                </NavLink>
+              </>
+            )}
+            
+            {/* Discipulo links */}
+            {!isAdmin() && !isDiscipulador() && (
+              <>
+                <NavLink 
+                  to="/meu-plano" 
+                  icon={BookOpen}
+                  isActive={isPathActive('/meu-plano')}
+                >
+                  Meu Plano
+                </NavLink>
+                <NavLink 
+                  to="/meu-grupo" 
+                  icon={Folder}
+                  isActive={isPathActive('/meu-grupo')}
+                >
+                  Meu Grupo
+                </NavLink>
+                <NavLink 
+                  to="/comunidade" 
+                  icon={MessageSquare}
+                  isActive={isPathActive('/comunidade')}
+                >
+                  Comunidade
+                </NavLink>
+                <NavLink 
+                  to="/perfil" 
+                  icon={User}
+                  isActive={isPathActive('/perfil')}
+                >
+                  Meu Perfil
+                </NavLink>
+              </>
+            )}
           </ul>
         </nav>
       </div>

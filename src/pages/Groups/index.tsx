@@ -13,7 +13,7 @@ import { Grupo } from '@/types';
 
 export default function Groups() {
   const { user, isAdmin, isDiscipulador } = useAuth();
-  const { groups, loading, refreshGroups } = useGroupsData();
+  const { groups, loading, fetchGroups } = useGroupsData();
   
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -54,7 +54,7 @@ export default function Groups() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={refreshGroups} variant="outline" size="sm">
+            <Button onClick={fetchGroups} variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" /> Atualizar
             </Button>
             {canCreateGroup && (
@@ -68,19 +68,17 @@ export default function Groups() {
         <GroupsTable 
           groups={groups}
           loading={loading}
-          isAdmin={isAdmin()}
-          isLeader={isDiscipulador()}
-          currentUserId={user?.id}
           onEdit={handleEditGroup}
           onDelete={handleDeleteGroup}
           onViewMembers={handleViewMembers}
+          currentUserId={user?.id}
         />
       </div>
       
       <GroupDialog 
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen} 
-        onGroupCreated={refreshGroups}
+        onSuccess={fetchGroups}
       />
       
       {selectedGroup && (
@@ -89,14 +87,14 @@ export default function Groups() {
             open={editDialogOpen} 
             onOpenChange={setEditDialogOpen} 
             group={selectedGroup}
-            onGroupUpdated={refreshGroups}
+            onSuccess={fetchGroups}
           />
           
           <DeleteGroupDialog
             open={deleteDialogOpen}
             onOpenChange={setDeleteDialogOpen}
             group={selectedGroup}
-            onGroupDeleted={refreshGroups}
+            onSuccess={fetchGroups}
           />
           
           <ViewGroupMembersDialog
