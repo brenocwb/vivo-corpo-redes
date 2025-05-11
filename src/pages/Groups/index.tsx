@@ -94,7 +94,6 @@ export default function Groups() {
             open={deleteDialogOpen}
             onOpenChange={setDeleteDialogOpen}
             group={selectedGroup}
-            onSuccess={fetchGroups}
           />
           
           <ViewGroupMembersDialog

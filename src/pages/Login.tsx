@@ -6,19 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, User } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user, signIn } = useAuth();
   const [activeTab, setActiveTab] = useState('login');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -26,6 +29,51 @@ export default function Login() {
       await signIn(email, password);
     } catch (error: any) {
       setError(error.message || 'Falha ao fazer login. Verifique suas credenciais.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Step 1: Register with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (authError) throw authError;
+
+      // Step 2: Create user record in users table
+      if (authData.user) {
+        const { error: userError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            email,
+            nome: name,
+            tipo_usuario: 'discipulo', // Default role
+          });
+
+        if (userError) throw userError;
+
+        toast('Cadastro realizado com sucesso!', {
+          description: 'Faça login para acessar o sistema.',
+        });
+        
+        // Clear form and switch to login tab
+        setName('');
+        setEmail('');
+        setPassword('');
+        setActiveTab('login');
+      }
+    } catch (error: any) {
+      console.error('Erro no cadastro:', error);
+      setError(error.message || 'Não foi possível completar o cadastro. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -84,8 +132,9 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="signup">Cadastro</TabsTrigger>
               <TabsTrigger value="demo">Contas Demo</TabsTrigger>
             </TabsList>
             
@@ -96,7 +145,7 @@ export default function Login() {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
                   <Input
@@ -129,6 +178,61 @@ export default function Login() {
                   disabled={loading}
                 >
                   {loading ? 'Entrando...' : 'Entrar'}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="signup">
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              <form onSubmit={handleSignupSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-name">Nome completo</Label>
+                  <Input
+                    id="signup-name"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">E-mail</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Senha</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    placeholder="Crie uma senha segura"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Ao se cadastrar, você será registrado como membro discípulo e terá acesso às funcionalidades básicas da plataforma.
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-corpovivo-600 hover:bg-corpovivo-700"
+                  disabled={loading}
+                >
+                  {loading ? 'Cadastrando...' : 'Cadastrar'}
                 </Button>
               </form>
             </TabsContent>
@@ -179,12 +283,39 @@ export default function Login() {
             </TabsContent>
           </Tabs>
         </CardContent>
+        <CardFooter>
+          <div className="w-full text-xs text-center text-muted-foreground">
+            {activeTab === 'login' ? (
+              <p>
+                Não tem uma conta?{" "}
+                <button 
+                  type="button" 
+                  className="text-corpovivo-600 hover:underline" 
+                  onClick={() => setActiveTab('signup')}
+                >
+                  Cadastre-se
+                </button>
+              </p>
+            ) : activeTab === 'signup' ? (
+              <p>
+                Já tem uma conta?{" "}
+                <button 
+                  type="button" 
+                  className="text-corpovivo-600 hover:underline" 
+                  onClick={() => setActiveTab('login')}
+                >
+                  Faça login
+                </button>
+              </p>
+            ) : null}
+          </div>
+        </CardFooter>
       </Card>
       
       <p className="mt-8 text-sm text-center text-muted-foreground">
         Plataforma exclusiva para membros do Corpo Vivo.
         <br />
-        Se você não possui acesso, entre em contato com seu líder.
+        Para mais informações, entre em contato com a secretaria.
       </p>
     </div>
   );
