@@ -39,9 +39,9 @@ export const DiscipuladorSelect = ({ control, users, loading }: DiscipuladorSele
               ) : users.length === 0 ? (
                 <SelectItem value="none" disabled>Nenhum usuário encontrado</SelectItem>
               ) : (
-                // Filtrando para mostrar apenas admin e líderes como discipuladores
+                // Filtrando para mostrar apenas admin e discipuladores como discipuladores
                 users
-                  .filter(user => ['admin', 'lider'].includes(user.tipo_usuario || ''))
+                  .filter(user => ['admin', 'lider', 'discipulador'].includes(user.tipo_usuario || ''))
                   .map(user => (
                     <SelectItem key={user.id} value={user.id}>{user.nome}</SelectItem>
                   ))

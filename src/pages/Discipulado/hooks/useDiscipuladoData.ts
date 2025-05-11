@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { User } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -15,7 +15,7 @@ export interface Discipulado {
 }
 
 export const useDiscipuladoData = (user: User | null) => {
-  const { isAdmin, isLider } = useAuth();
+  const { isAdmin, isDiscipulador } = useAuth();
   const [discipulados, setDiscipulados] = useState<Discipulado[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,8 +27,8 @@ export const useDiscipuladoData = (user: User | null) => {
         .from('discipulados')
         .select('id, discipulador_id, discipulo_id, criado_em');
 
-      // Filter by discipulador_id if user is lider but not admin
-      if (isLider() && !isAdmin() && user) {
+      // Filter by discipulador_id if user is discipulador but not admin
+      if (isDiscipulador() && !isAdmin() && user) {
         query = query.eq('discipulador_id', user.id);
       }
 

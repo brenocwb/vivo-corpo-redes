@@ -3,47 +3,46 @@ import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { FolderPlus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
+import { GroupsTable } from './components/GroupsTable';
+import { useGroupsData } from './hooks/useGroupsData';
 import GroupDialog from './GroupDialog';
 import DeleteGroupDialog from './DeleteGroupDialog';
 import ViewGroupMembersDialog from './ViewGroupMembersDialog';
-import { useGroupsData, Group } from './hooks/useGroupsData';
-import { GroupsTable } from './components/GroupsTable';
-import { getDayName } from './utils/groupUtils';
+import { Grupo } from '@/types';
 
 export default function Groups() {
-  const { isAdmin, isLider } = useAuth();
-  const { groups, loading, fetchGroups } = useGroupsData();
+  const { user, isAdmin, isDiscipulador } = useAuth();
+  const { groups, loading, refreshGroups } = useGroupsData();
   
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [membersDialogOpen, setMembersDialogOpen] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-
-  // Group management handlers
+  const [viewMembersDialogOpen, setViewMembersDialogOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<Grupo | null>(null);
+  
   const handleCreateGroup = () => {
     setSelectedGroup(null);
     setCreateDialogOpen(true);
   };
-
-  const handleEditGroup = (group: Group) => {
+  
+  const handleEditGroup = (group: Grupo) => {
     setSelectedGroup(group);
     setEditDialogOpen(true);
   };
-
-  const handleDeleteGroup = (group: Group) => {
+  
+  const handleDeleteGroup = (group: Grupo) => {
     setSelectedGroup(group);
     setDeleteDialogOpen(true);
   };
-
-  const handleViewMembers = (group: Group) => {
+  
+  const handleViewMembers = (group: Grupo) => {
     setSelectedGroup(group);
-    setMembersDialogOpen(true);
+    setViewMembersDialogOpen(true);
   };
-
-  const canManageGroups = isAdmin() || isLider();
-
+  
+  const canCreateGroup = isAdmin() || isDiscipulador();
+  
   return (
     <Layout>
       <div className="space-y-6">
@@ -51,59 +50,58 @@ export default function Groups() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Grupos</h1>
             <p className="text-muted-foreground">
-              Gerencie os grupos de discipulado da plataforma Corpo Vivo.
+              Gerencie os grupos da igreja e seus membros.
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => fetchGroups()} variant="outline" size="sm">
+            <Button onClick={refreshGroups} variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" /> Atualizar
             </Button>
-            {canManageGroups && (
+            {canCreateGroup && (
               <Button onClick={handleCreateGroup} size="sm">
-                <FolderPlus className="w-4 h-4 mr-2" /> Novo Grupo
+                <Plus className="w-4 h-4 mr-2" /> Novo Grupo
               </Button>
             )}
           </div>
         </div>
-
+        
         <GroupsTable 
           groups={groups}
           loading={loading}
-          handleEditGroup={handleEditGroup}
-          handleDeleteGroup={handleDeleteGroup}
-          handleViewMembers={handleViewMembers}
-          canManageGroups={canManageGroups}
-          getDayName={getDayName}
+          isAdmin={isAdmin()}
+          isLeader={isDiscipulador()}
+          currentUserId={user?.id}
+          onEdit={handleEditGroup}
+          onDelete={handleDeleteGroup}
+          onViewMembers={handleViewMembers}
         />
       </div>
-
-      {/* Create/Edit Dialog */}
+      
       <GroupDialog 
         open={createDialogOpen} 
-        onOpenChange={setCreateDialogOpen}
-        group={null}
-        onGroupSaved={fetchGroups}
+        onOpenChange={setCreateDialogOpen} 
+        onGroupCreated={refreshGroups}
       />
       
       {selectedGroup && (
         <>
-          <GroupDialog
-            open={editDialogOpen}
-            onOpenChange={setEditDialogOpen}
+          <GroupDialog 
+            open={editDialogOpen} 
+            onOpenChange={setEditDialogOpen} 
             group={selectedGroup}
-            onGroupSaved={fetchGroups}
+            onGroupUpdated={refreshGroups}
           />
           
           <DeleteGroupDialog
             open={deleteDialogOpen}
             onOpenChange={setDeleteDialogOpen}
             group={selectedGroup}
-            onGroupDeleted={fetchGroups}
+            onGroupDeleted={refreshGroups}
           />
-
+          
           <ViewGroupMembersDialog
-            open={membersDialogOpen}
-            onOpenChange={setMembersDialogOpen}
+            open={viewMembersDialogOpen}
+            onOpenChange={setViewMembersDialogOpen}
             groupId={selectedGroup.id}
             groupName={selectedGroup.nome}
           />

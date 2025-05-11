@@ -12,8 +12,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   isAdmin: () => boolean;
-  isDiscipulador: () => boolean;  // Atualizado de isLider
-  isDiscipulo: () => boolean;     // Atualizado de isMembro
+  isDiscipulador: () => boolean;
+  isDiscipulo: () => boolean;
   getUserRole: () => UserRole | null;
 }
 
@@ -83,7 +83,6 @@ const useAuthHelpers = (setUser: React.Dispatch<React.SetStateAction<User | null
     console.error('Erro ao buscar dados do usuário:', error);
   }
 };
-
   
   return { fetchAndSetUserData, navigate };
 };
