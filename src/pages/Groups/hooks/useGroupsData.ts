@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Grupo } from '@/types';
@@ -25,7 +25,16 @@ export const useGroupsData = () => {
       if (error) throw error;
 
       if (data) {
-        setGroups(data as Grupo[]);
+        // Mapear dados para o tipo Grupo
+        const mappedGroups: Grupo[] = data.map(grupo => ({
+          id: grupo.id,
+          nome: grupo.nome,
+          descricao: grupo.descricao,
+          lider_id: grupo.lider_id,
+          created_at: grupo.created_at
+        }));
+        
+        setGroups(mappedGroups);
       }
     } catch (error: any) {
       console.error('Erro ao buscar grupos:', error);
@@ -38,10 +47,10 @@ export const useGroupsData = () => {
     }
   };
 
-  // Call fetchGroups on component mount
-  useState(() => {
+  // Carregar grupos ao montar o componente
+  useEffect(() => {
     fetchGroups();
-  });
+  }, []);
 
   return { groups, loading, fetchGroups };
 };

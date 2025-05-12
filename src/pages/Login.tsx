@@ -38,10 +38,10 @@ export default function Login() {
       setIsSubmitting(true);
       
       // Login with provided credentials
-      const { error } = await signIn(email, password);
+      const result = await signIn(email, password);
       
-      if (error) {
-        throw new Error(error.message);
+      if (result && 'error' in result && result.error) {
+        throw new Error(result.error.message);
       }
       
       toast.success("Login realizado com sucesso!");
@@ -72,7 +72,7 @@ export default function Login() {
       setIsSubmitting(true);
       
       // Create the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const authResult = await supabase.auth.signUp({
         email: registerEmail,
         password: registerPassword,
         options: {
@@ -82,12 +82,14 @@ export default function Login() {
         }
       });
       
-      if (authError) throw new Error(authError.message);
+      if (authResult && 'error' in authResult && authResult.error) {
+        throw new Error(authResult.error.message);
+      }
       
-      if (authData.user) {
+      if (authResult.data.user) {
         // Create entry in users table with role 'membro' (discipulo)
         const { error: userError } = await supabase.from('users').insert({
-          id: authData.user.id,
+          id: authResult.data.user.id,
           nome: registerName,
           email: registerEmail,
           tipo_usuario: 'membro' // Default role is regular member/discipulo

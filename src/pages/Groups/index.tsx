@@ -8,22 +8,10 @@ import { GroupsTable } from './components/GroupsTable';
 import GroupDialog from './GroupDialog';
 import DeleteGroupDialog from './DeleteGroupDialog';
 import ViewGroupMembersDialog from './ViewGroupMembersDialog';
-
-// Define the Grupo interface if it's not already defined elsewhere
-export interface Grupo {
-  id: string;
-  nome: string;
-  local?: string;
-  dia_semana?: string;
-  criado_em: string;
-  lider_id?: string;
-  lider?: {
-    nome: string;
-  };
-}
+import { Grupo } from '@/types';
 
 export default function Groups() {
-  const { grupos, loading, fetchGrupos } = useGroupsData();
+  const { groups, loading, fetchGroups } = useGroupsData();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -61,7 +49,7 @@ export default function Groups() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={fetchGrupos} variant="outline" size="sm">
+            <Button onClick={fetchGroups} variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" /> Atualizar
             </Button>
             <Button onClick={handleCreateClick} size="sm">
@@ -71,7 +59,7 @@ export default function Groups() {
         </div>
 
         <GroupsTable
-          grupos={grupos}
+          groups={groups}
           loading={loading}
           onEdit={handleEditClick}
           onDelete={handleDeleteClick}
@@ -81,7 +69,7 @@ export default function Groups() {
         <GroupDialog
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
-          onGroupCreated={fetchGrupos}
+          onSuccess={fetchGroups}
         />
 
         {selectedGroup && (
@@ -90,20 +78,21 @@ export default function Groups() {
               open={editDialogOpen}
               onOpenChange={setEditDialogOpen}
               group={selectedGroup}
-              onGroupCreated={fetchGrupos}
+              onSuccess={fetchGroups}
             />
 
             <DeleteGroupDialog
               open={deleteDialogOpen}
               onOpenChange={setDeleteDialogOpen}
               group={selectedGroup}
-              onGroupDeleted={fetchGrupos}
+              onGroupDeleted={fetchGroups}
             />
 
             <ViewGroupMembersDialog
               open={viewMembersDialogOpen}
               onOpenChange={setViewMembersDialogOpen}
-              group={selectedGroup}
+              groupId={selectedGroup.id}
+              groupName={selectedGroup.nome}
             />
           </>
         )}

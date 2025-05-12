@@ -1,5 +1,5 @@
 
-import { Discipulado } from '../hooks/useDiscipuladoData';
+import { Discipulado } from '@/types';
 import DiscipuladoDialog from '../DiscipuladoDialog';
 import DeleteDiscipuladoDialog from '../DeleteDiscipuladoDialog';
 import EncontroDialog from '../EncontroDialog';
@@ -53,13 +53,13 @@ export function DiscipuladoDialogs({
           <EncontroDialog
             open={encontroDialogOpen}
             onOpenChange={setEncontroDialogOpen}
-            discipulado={selectedDiscipulado}
+            discipuladoId={selectedDiscipulado.id}
           />
 
           <HistoricoEncontrosDialog
             open={historicoDialogOpen}
             onOpenChange={setHistoricoDialogOpen}
-            discipulado={selectedDiscipulado}
+            discipuladoId={selectedDiscipulado.id}
           />
         </>
       )}
