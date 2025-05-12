@@ -39,9 +39,10 @@ export const useDiscipuladoDialogs = () => {
     historicoDialogOpen,
     setHistoricoDialogOpen,
     selectedDiscipulado,
+    setSelectedDiscipulado,
     handleCreateDiscipulado,
     handleDeleteDiscipulado,
     handleAddEncontro,
-    handleViewHistorico
+    handleViewHistorico,
   };
 };

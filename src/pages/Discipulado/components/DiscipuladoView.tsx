@@ -1,18 +1,24 @@
 
-import { useAuth } from '@/context/AuthContext';
 import { DiscipuladoHeader } from './DiscipuladoHeader';
 import { DiscipuladoTable } from './DiscipuladoTable';
 import { DiscipuladoDialogs } from './DiscipuladoDialogs';
+import { Discipulado } from '../hooks/useDiscipuladoData';
+
+interface DiscipuladoViewProps {
+  discipulados: Discipulado[];
+  loading: boolean;
+  fetchDiscipulados: () => void;
+  dialogsState: any;
+  isLeaderOrAdmin: boolean;
+}
 
 export function DiscipuladoView({ 
   discipulados, 
   loading, 
   fetchDiscipulados,
-  dialogsState
-}) {
-  const { isAdmin, isDiscipulador } = useAuth();
-  const isLeaderOrAdmin = isAdmin() || isDiscipulador();
-  
+  dialogsState,
+  isLeaderOrAdmin
+}: DiscipuladoViewProps) {
   const {
     createDialogOpen,
     setCreateDialogOpen,

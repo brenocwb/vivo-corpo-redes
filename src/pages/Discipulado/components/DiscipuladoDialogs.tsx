@@ -4,22 +4,23 @@ import DiscipuladoDialog from '../DiscipuladoDialog';
 import DeleteDiscipuladoDialog from '../DeleteDiscipuladoDialog';
 import EncontroDialog from '../EncontroDialog';
 import HistoricoEncontrosDialog from '../HistoricoEncontrosDialog';
+import { Dispatch, SetStateAction } from 'react';
 
 interface DiscipuladoDialogsProps {
   createDialogOpen: boolean;
-  setCreateDialogOpen: (open: boolean) => void;
+  setCreateDialogOpen: Dispatch<SetStateAction<boolean>>;
   deleteDialogOpen: boolean;
-  setDeleteDialogOpen: (open: boolean) => void;
+  setDeleteDialogOpen: Dispatch<SetStateAction<boolean>>;
   encontroDialogOpen: boolean;
-  setEncontroDialogOpen: (open: boolean) => void;
+  setEncontroDialogOpen: Dispatch<SetStateAction<boolean>>;
   historicoDialogOpen: boolean;
-  setHistoricoDialogOpen: (open: boolean) => void;
+  setHistoricoDialogOpen: Dispatch<SetStateAction<boolean>>;
   selectedDiscipulado: Discipulado | null;
   onDiscipuladoCreated: () => void;
   onDiscipuladoDeleted: () => void;
 }
 
-export const DiscipuladoDialogs = ({
+export function DiscipuladoDialogs({
   createDialogOpen,
   setCreateDialogOpen,
   deleteDialogOpen,
@@ -31,7 +32,7 @@ export const DiscipuladoDialogs = ({
   selectedDiscipulado,
   onDiscipuladoCreated,
   onDiscipuladoDeleted
-}: DiscipuladoDialogsProps) => {
+}: DiscipuladoDialogsProps) {
   return (
     <>
       <DiscipuladoDialog
@@ -39,7 +40,7 @@ export const DiscipuladoDialogs = ({
         onOpenChange={setCreateDialogOpen}
         onDiscipuladoCreated={onDiscipuladoCreated}
       />
-      
+
       {selectedDiscipulado && (
         <>
           <DeleteDiscipuladoDialog
@@ -48,24 +49,20 @@ export const DiscipuladoDialogs = ({
             discipulado={selectedDiscipulado}
             onDiscipuladoDeleted={onDiscipuladoDeleted}
           />
-          
+
           <EncontroDialog
             open={encontroDialogOpen}
             onOpenChange={setEncontroDialogOpen}
-            discipuladoId={selectedDiscipulado.id}
-            discipuladorNome={selectedDiscipulado.discipulador_nome}
-            discipuloNome={selectedDiscipulado.discipulo_nome}
+            discipulado={selectedDiscipulado}
           />
-          
+
           <HistoricoEncontrosDialog
             open={historicoDialogOpen}
             onOpenChange={setHistoricoDialogOpen}
-            discipuladoId={selectedDiscipulado.id}
-            discipuladorNome={selectedDiscipulado.discipulador_nome}
-            discipuloNome={selectedDiscipulado.discipulo_nome}
+            discipulado={selectedDiscipulado}
           />
         </>
       )}
     </>
   );
-};
+}

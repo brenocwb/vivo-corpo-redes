@@ -1,48 +1,55 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
-import { useAuth } from '@/context/AuthContext';
+import { useGroupsData } from './hooks/useGroupsData';
 import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
 import { GroupsTable } from './components/GroupsTable';
-import { useGroupsData } from './hooks/useGroupsData';
 import GroupDialog from './GroupDialog';
 import DeleteGroupDialog from './DeleteGroupDialog';
 import ViewGroupMembersDialog from './ViewGroupMembersDialog';
-import { Grupo } from '@/types';
+
+// Define the Grupo interface if it's not already defined elsewhere
+export interface Grupo {
+  id: string;
+  nome: string;
+  local?: string;
+  dia_semana?: string;
+  criado_em: string;
+  lider_id?: string;
+  lider?: {
+    nome: string;
+  };
+}
 
 export default function Groups() {
-  const { user, isAdmin, isDiscipulador } = useAuth();
-  const { groups, loading, fetchGroups } = useGroupsData();
-  
+  const { grupos, loading, fetchGrupos } = useGroupsData();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [viewMembersDialogOpen, setViewMembersDialogOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Grupo | null>(null);
-  
-  const handleCreateGroup = () => {
+
+  const handleCreateClick = () => {
     setSelectedGroup(null);
     setCreateDialogOpen(true);
   };
-  
-  const handleEditGroup = (group: Grupo) => {
+
+  const handleEditClick = (group: Grupo) => {
     setSelectedGroup(group);
     setEditDialogOpen(true);
   };
-  
-  const handleDeleteGroup = (group: Grupo) => {
+
+  const handleDeleteClick = (group: Grupo) => {
     setSelectedGroup(group);
     setDeleteDialogOpen(true);
   };
-  
-  const handleViewMembers = (group: Grupo) => {
+
+  const handleViewMembersClick = (group: Grupo) => {
     setSelectedGroup(group);
     setViewMembersDialogOpen(true);
   };
-  
-  const canCreateGroup = isAdmin() || isDiscipulador();
-  
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -50,60 +57,57 @@ export default function Groups() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Grupos</h1>
             <p className="text-muted-foreground">
-              Gerencie os grupos da igreja e seus membros.
+              Administre os grupos de discipulado e células da igreja.
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={fetchGroups} variant="outline" size="sm">
+            <Button onClick={fetchGrupos} variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" /> Atualizar
             </Button>
-            {canCreateGroup && (
-              <Button onClick={handleCreateGroup} size="sm">
-                <Plus className="w-4 h-4 mr-2" /> Novo Grupo
-              </Button>
-            )}
+            <Button onClick={handleCreateClick} size="sm">
+              <Plus className="w-4 h-4 mr-2" /> Novo Grupo
+            </Button>
           </div>
         </div>
-        
-        <GroupsTable 
-          groups={groups}
+
+        <GroupsTable
+          grupos={grupos}
           loading={loading}
-          onEdit={handleEditGroup}
-          onDelete={handleDeleteGroup}
-          onViewMembers={handleViewMembers}
-          currentUserId={user?.id}
+          onEdit={handleEditClick}
+          onDelete={handleDeleteClick}
+          onViewMembers={handleViewMembersClick}
         />
+
+        <GroupDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          onGroupCreated={fetchGrupos}
+        />
+
+        {selectedGroup && (
+          <>
+            <GroupDialog
+              open={editDialogOpen}
+              onOpenChange={setEditDialogOpen}
+              group={selectedGroup}
+              onGroupCreated={fetchGrupos}
+            />
+
+            <DeleteGroupDialog
+              open={deleteDialogOpen}
+              onOpenChange={setDeleteDialogOpen}
+              group={selectedGroup}
+              onGroupDeleted={fetchGrupos}
+            />
+
+            <ViewGroupMembersDialog
+              open={viewMembersDialogOpen}
+              onOpenChange={setViewMembersDialogOpen}
+              group={selectedGroup}
+            />
+          </>
+        )}
       </div>
-      
-      <GroupDialog 
-        open={createDialogOpen} 
-        onOpenChange={setCreateDialogOpen} 
-        onSuccess={fetchGroups}
-      />
-      
-      {selectedGroup && (
-        <>
-          <GroupDialog 
-            open={editDialogOpen} 
-            onOpenChange={setEditDialogOpen} 
-            group={selectedGroup}
-            onSuccess={fetchGroups}
-          />
-          
-          <DeleteGroupDialog
-            open={deleteDialogOpen}
-            onOpenChange={setDeleteDialogOpen}
-            group={selectedGroup}
-          />
-          
-          <ViewGroupMembersDialog
-            open={viewMembersDialogOpen}
-            onOpenChange={setViewMembersDialogOpen}
-            groupId={selectedGroup.id}
-            groupName={selectedGroup.nome}
-          />
-        </>
-      )}
     </Layout>
   );
 }

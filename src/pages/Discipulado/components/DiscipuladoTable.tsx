@@ -1,8 +1,8 @@
 
-import { Button } from "@/components/ui/button";
-import { CalendarPlus, Trash2, Users } from "lucide-react";
-import { Discipulado } from "../hooks/useDiscipuladoData";
-import { formatDate } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { CalendarPlus, Eye, Trash2 } from 'lucide-react';
+import { Discipulado } from '../hooks/useDiscipuladoData';
+import { formatDate } from '@/lib/utils';
 
 interface DiscipuladoTableProps {
   discipulados: Discipulado[];
@@ -29,7 +29,7 @@ export function DiscipuladoTable({
             <tr className="border-b bg-muted/50">
               <th className="h-10 px-4 text-left">Discipulador</th>
               <th className="h-10 px-4 text-left">Discípulo</th>
-              <th className="h-10 px-4 text-left">Data de Início</th>
+              <th className="h-10 px-4 text-left">Data de Criação</th>
               <th className="h-10 px-4 text-right">Ações</th>
             </tr>
           </thead>
@@ -49,31 +49,39 @@ export function DiscipuladoTable({
             ) : (
               discipulados.map((discipulado) => (
                 <tr key={discipulado.id} className="border-b transition-colors hover:bg-muted/50">
-                  <td className="p-4 align-middle">{discipulado.discipulador_nome}</td>
-                  <td className="p-4 align-middle">{discipulado.discipulo_nome}</td>
-                  <td className="p-4 align-middle">{formatDate(discipulado.criado_em)}</td>
+                  <td className="p-4 align-middle">
+                    {discipulado.discipulador?.nome || 'Não definido'}
+                  </td>
+                  <td className="p-4 align-middle">
+                    {discipulado.discipulo?.nome || 'Não definido'}
+                  </td>
+                  <td className="p-4 align-middle">
+                    {formatDate(discipulado.criado_em)}
+                  </td>
                   <td className="p-4 align-middle text-right">
                     <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleAddEncontro(discipulado)}
-                        title="Registrar encontro"
-                      >
-                        <CalendarPlus className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      {isLeaderOrAdmin && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddEncontro(discipulado)}
+                          title="Adicionar encontro"
+                        >
+                          <CalendarPlus className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleViewHistorico(discipulado)}
                         title="Ver histórico de encontros"
                       >
-                        <Users className="h-4 w-4" />
+                        <Eye className="h-4 w-4" />
                       </Button>
                       {isLeaderOrAdmin && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleDeleteDiscipulado(discipulado)}
                           className="text-destructive hover:bg-destructive/10"
                           title="Excluir discipulado"

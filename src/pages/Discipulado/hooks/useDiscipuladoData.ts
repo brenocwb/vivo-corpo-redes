@@ -2,38 +2,44 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/AuthContext';
+
+// Define the Discipulado type
+export interface Discipulado {
+  id: string;
+  discipulador_id: string;
+  discipulo_id: string;
+  criado_em: string;
+  discipulador?: {
+    nome: string;
+  };
+  discipulo?: {
+    nome: string;
+  };
+}
 
 export const useDiscipuladoData = () => {
-  const [discipulados, setDiscipulados] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const [discipulados, setDiscipulados] = useState<Discipulado[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const fetchDiscipulados = async () => {
-    if (!user) return;
-    
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('discipulados')
         .select(`
-          id,
-          criado_em,
-          discipulador_id,
-          discipulador:discipulador_id(id, nome),
-          discipulo_id,
-          discipulo:discipulo_id(id, nome)
+          *,
+          discipulador:discipulador_id(nome),
+          discipulo:discipulo_id(nome)
         `)
         .order('criado_em', { ascending: false });
 
       if (error) throw error;
-
+      
       setDiscipulados(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao buscar discipulados:', error);
-      toast('Erro ao carregar discipulados', {
-        description: 'Não foi possível obter a lista de discipulados.',
-        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
+      toast.error('Erro ao carregar discipulados', {
+        description: error.message || 'Não foi possível obter a lista de discipulados.',
       });
     } finally {
       setLoading(false);
@@ -42,7 +48,7 @@ export const useDiscipuladoData = () => {
 
   useEffect(() => {
     fetchDiscipulados();
-  }, [user]); // Add user as dependency
+  }, []);
 
   return { discipulados, loading, fetchDiscipulados };
 };
