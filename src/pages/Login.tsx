@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChurchDataGenerator } from "@/components/ChurchDataGenerator";
 
 export default function Login() {
   const { user, signIn } = useAuth();
@@ -38,11 +39,7 @@ export default function Login() {
       setIsSubmitting(true);
       
       // Login with provided credentials
-      const result = await signIn(email, password);
-      
-      if (result && 'error' in result && result.error) {
-        throw new Error(result.error.message);
-      }
+      await signIn(email, password);
       
       toast.success("Login realizado com sucesso!");
     } catch (error: any) {
@@ -82,7 +79,7 @@ export default function Login() {
         }
       });
       
-      if (authResult && 'error' in authResult && authResult.error) {
+      if (authResult.error) {
         throw new Error(authResult.error.message);
       }
       
@@ -140,9 +137,9 @@ export default function Login() {
       }
       
       // Try to login
-      const { error } = await signIn(demoEmail, demoPassword);
+      const result = await signIn(demoEmail, demoPassword);
       
-      if (error) {
+      if (result && 'error' in result && result.error) {
         // Login failed, try to create the demo account
         await createDemoUser(role, demoEmail, demoPassword);
         
@@ -357,6 +354,8 @@ export default function Login() {
             </Card>
           </TabsContent>
         </Tabs>
+        
+        <ChurchDataGenerator />
       </div>
     </div>
   );

@@ -54,12 +54,16 @@ export function DiscipuladoDialogs({
             open={encontroDialogOpen}
             onOpenChange={setEncontroDialogOpen}
             discipuladoId={selectedDiscipulado.id}
+            discipuladorNome={selectedDiscipulado.discipulador?.nome || ''}
+            discipuloNome={selectedDiscipulado.discipulo?.nome || ''}
           />
 
           <HistoricoEncontrosDialog
             open={historicoDialogOpen}
             onOpenChange={setHistoricoDialogOpen}
             discipuladoId={selectedDiscipulado.id}
+            discipuladorNome={selectedDiscipulado.discipulador?.nome || ''}
+            discipuloNome={selectedDiscipulado.discipulo?.nome || ''}
           />
         </>
       )}
