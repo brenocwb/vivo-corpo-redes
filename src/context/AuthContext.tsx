@@ -1,10 +1,8 @@
-
-import { createContext, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, ReactNode, useCallback } from 'react';
 import { User, UserRole } from '@/types';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { useAuthState } from '@/hooks/useAuthState';
-import { useAuthHelpers, useRoleHelpers } from '@/hooks/useAuthHelpers';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -12,141 +10,165 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  isAdmin: () => boolean;
-  isDiscipulador: () => boolean;
-  isDiscipulo: () => boolean;
+  isAdmin: boolean;
+  isDiscipulador: boolean;
+  isDiscipulo: boolean;
   getUserRole: () => UserRole | null;
 }
 
-export const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  signIn: async () => {},
-  signOut: async () => {},
-  resetPassword: async () => {},
-  isAdmin: () => false,
-  isDiscipulador: () => false,
-  isDiscipulo: () => false,
-  getUserRole: () => null,
-});
+export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { user, setUser, loading, setLoading } = useAuthState();
-  const { fetchAndSetUserData, navigate } = useAuthHelpers(setUser);
-  const { isAdmin, isDiscipulador, isDiscipulo, getUserRole } = useRoleHelpers(user);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
+  // Função para buscar dados do usuário na tabela pública
+  const fetchUserData = useCallback(async (userId: string, email: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error || !data) {
+        throw error || new Error('Usuário não encontrado');
+      }
+
+      return {
+        id: userId,
+        email,
+        nome: data.nome || '',
+        tipo_usuario: data.tipo_usuario,
+        avatar_url: data.avatar_url || '',
+        created_at: data.created_at
+      } as User;
+    } catch (error) {
+      console.error('Erro ao buscar dados do usuário:', error);
+      throw error;
+    }
+  }, []);
+
+  // Função principal de login
   const signIn = async (email: string, password: string) => {
     try {
-      toast('Conectando...', {
-        description: 'Aguarde enquanto validamos suas credenciais'
-      });
+      setLoading(true);
+      toast.loading('Validando credenciais...');
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // 1. Autenticação no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (error) {
-        toast('Erro ao conectar', {
-          description: error.message,
-          style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
-        });
-        throw error;
+      if (authError || !authData.user) {
+        throw authError || new Error('Falha na autenticação');
       }
 
-      if (data?.user) {
-        await fetchAndSetUserData(data.user.email);
-        navigate('/dashboard');
-      }
+      // 2. Busca dados adicionais do usuário
+      const userData = await fetchUserData(authData.user.id, email);
+      setUser(userData);
+
+      // 3. Redirecionamento baseado no tipo de usuário
+      const redirectPath = userData.tipo_usuario === 'admin' 
+        ? '/dashboard' 
+        : userData.tipo_usuario === 'discipulador' 
+          ? '/discipulador' 
+          : '/discipulo';
+
+      navigate(redirectPath);
+      toast.success(`Bem-vindo, ${userData.nome || 'usuário'}!`);
+
     } catch (error: any) {
-      console.error('Erro ao fazer login:', error);
-      toast('Falha ao conectar', {
-        description: 'Verifique seu e-mail e senha e tente novamente.',
-        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
-      });
+      console.error('Erro no login:', error);
+      toast.error(error.message || 'Credenciais inválidas');
+      await supabase.auth.signOut();
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Função de logout
   const signOut = async () => {
     try {
+      setLoading(true);
       await supabase.auth.signOut();
       setUser(null);
       navigate('/login');
-      toast('Desconectado', {
-        description: 'Você saiu do sistema com sucesso.'
-      });
+      toast.info('Você foi desconectado');
     } catch (error) {
       console.error('Erro ao desconectar:', error);
-      toast('Erro ao desconectar', {
-        description: 'Não foi possível sair do sistema.',
-        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
-      });
+      toast.error('Erro ao desconectar');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Função para resetar senha
   const resetPassword = async (email: string) => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/reset-password',
+        redirectTo: `${window.location.origin}/reset-password`
       });
 
-      if (error) {
-        toast('Erro ao solicitar recuperação de senha', {
-          description: error.message,
-          style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
-        });
-        throw error;
-      }
-
-      toast('Recuperação de senha enviada', {
-        description: 'Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha.'
-      });
-
+      if (error) throw error;
+      
+      toast.success('E-mail de recuperação enviado!');
     } catch (error: any) {
-      console.error('Erro ao solicitar recuperação de senha:', error);
-      toast('Falha na recuperação de senha', {
-        description: 'Tente novamente mais tarde.',
-        style: { backgroundColor: 'hsl(var(--destructive))' } as React.CSSProperties
-      });
+      console.error('Erro ao resetar senha:', error);
+      toast.error(error.message || 'Erro ao enviar e-mail de recuperação');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Initialize auth state
-  useEffect(() => {
-    setLoading(true);
+  // Verificações de tipo de usuário
+  const isAdmin = user?.tipo_usuario === 'admin';
+  const isDiscipulador = user?.tipo_usuario === 'discipulador';
+  const isDiscipulo = user?.tipo_usuario === 'discipulo';
+  const getUserRole = () => user?.tipo_usuario || null;
 
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+  // Efeito para gerenciar estado de autenticação
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        setLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+
         if (session?.user) {
-          // Use setTimeout to prevent recursive issues
-          setTimeout(async () => {
-            await fetchAndSetUserData(session.user.email);
-          }, 0);
+          const userData = await fetchUserData(session.user.id, session.user.email!);
+          setUser(userData);
         } else {
           setUser(null);
         }
+      } catch (error) {
+        console.error('Erro ao verificar sessão:', error);
+        setUser(null);
+      } finally {
         setLoading(false);
+      }
+    };
+
+    // Verifica sessão ao carregar
+    checkSession();
+
+    // Observa mudanças de estado de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const userData = await fetchUserData(session.user.id, session.user.email!);
+          setUser(userData);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
       }
     );
 
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setTimeout(async () => {
-          await fetchAndSetUserData(session.user.email);
-          setLoading(false);
-        }, 0);
-      } else {
-        setUser(null);
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+    return () => subscription.unsubscribe();
+  }, [fetchUserData]);
 
   return (
     <AuthContext.Provider
@@ -167,4 +189,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
+};
