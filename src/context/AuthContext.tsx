@@ -1,11 +1,14 @@
-import { createContext, useContext, useEffect, ReactNode, useCallback } from 'react';
-import { User, UserRole } from '@/types';
+import { createContext, useContext, useEffect, ReactNode, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { Tables } from '@/types';
+
+// Tipos específicos para o contexto de autenticação
+type UserRole = 'admin' | 'discipulador' | 'discipulo';
 
 interface AuthContextType {
-  user: User | null;
+  user: Tables<'users'> | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -16,15 +19,15 @@ interface AuthContextType {
   getUserRole: () => UserRole | null;
 }
 
-export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Tables<'users'> | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Função para buscar dados do usuário na tabela pública
-  const fetchUserData = useCallback(async (userId: string, email: string) => {
+  // Função para buscar dados completos do usuário
+  const fetchUserData = useCallback(async (userId: string): Promise<Tables<'users'> | null> => {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -36,17 +39,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error || new Error('Usuário não encontrado');
       }
 
-      return {
-        id: userId,
-        email,
-        nome: data.nome || '',
-        tipo_usuario: data.tipo_usuario,
-        avatar_url: data.avatar_url || '',
-        created_at: data.created_at
-      } as User;
+      return data;
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
-      throw error;
+      return null;
     }
   }, []);
 
@@ -56,7 +52,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       toast.loading('Validando credenciais...');
 
-      // 1. Autenticação no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -66,11 +61,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw authError || new Error('Falha na autenticação');
       }
 
-      // 2. Busca dados adicionais do usuário
-      const userData = await fetchUserData(authData.user.id, email);
+      const userData = await fetchUserData(authData.user.id);
+      if (!userData) {
+        throw new Error('Perfil do usuário não encontrado');
+      }
+
       setUser(userData);
 
-      // 3. Redirecionamento baseado no tipo de usuário
+      // Redirecionamento baseado no tipo de usuário
       const redirectPath = userData.tipo_usuario === 'admin' 
         ? '/dashboard' 
         : userData.tipo_usuario === 'discipulador' 
@@ -129,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAdmin = user?.tipo_usuario === 'admin';
   const isDiscipulador = user?.tipo_usuario === 'discipulador';
   const isDiscipulo = user?.tipo_usuario === 'discipulo';
-  const getUserRole = () => user?.tipo_usuario || null;
+  const getUserRole = () => user?.tipo_usuario as UserRole || null;
 
   // Efeito para gerenciar estado de autenticação
   useEffect(() => {
@@ -139,8 +137,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session?.user) {
-          const userData = await fetchUserData(session.user.id, session.user.email!);
-          setUser(userData);
+          const userData = await fetchUserData(session.user.id);
+          setUser(userData || null);
         } else {
           setUser(null);
         }
@@ -159,8 +157,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          const userData = await fetchUserData(session.user.id, session.user.email!);
-          setUser(userData);
+          const userData = await fetchUserData(session.user.id);
+          setUser(userData || null);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
         }
