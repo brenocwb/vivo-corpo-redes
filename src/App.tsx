@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Navigate, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 
 // Pages
@@ -25,14 +25,19 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <div className="h-screen flex items-center justify-center">Carregando...</div>;
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
   
   if (!user) {
+    console.log('Usuário não autenticado, redirecionando para login');
     return <Navigate to="/login" replace />;
   }
   
-  return children;
+  return <>{children}</>;
 };
 
 // Admin Route component
@@ -40,18 +45,23 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, isAdmin } = useAuth();
   
   if (loading) {
-    return <div className="h-screen flex items-center justify-center">Carregando...</div>;
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
   
   if (!user) {
     return <Navigate to="/login" replace />;
   }
   
-  if (!isAdmin()) {
+  if (!isAdmin) {
+    console.log('Usuário não é admin, redirecionando para dashboard');
     return <Navigate to="/dashboard" replace />;
   }
   
-  return children;
+  return <>{children}</>;
 };
 
 // Discipulador or Admin Route component
@@ -59,18 +69,44 @@ const DiscipuladorOrAdminRoute = ({ children }: { children: React.ReactNode }) =
   const { user, loading, isAdmin, isDiscipulador } = useAuth();
   
   if (loading) {
-    return <div className="h-screen flex items-center justify-center">Carregando...</div>;
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
   
   if (!user) {
     return <Navigate to="/login" replace />;
   }
   
-  if (!isAdmin() && !isDiscipulador()) {
+  if (!isAdmin && !isDiscipulador) {
+    console.log('Usuário não tem permissão, redirecionando para dashboard');
     return <Navigate to="/dashboard" replace />;
   }
   
-  return children;
+  return <>{children}</>;
+};
+
+// Public Route component (for login page)
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+  
+  // If user is already logged in, redirect to dashboard
+  if (user) {
+    console.log('Usuário já autenticado, redirecionando para dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <>{children}</>;
 };
 
 // Auth wrapper to use auth context
@@ -78,7 +114,12 @@ const AuthWrapper = () => {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        {/* Public routes */}
+        <Route path="/login" element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        } />
         <Route path="/reset-password" element={<ResetPassword />} />
         
         {/* Protected routes */}
@@ -128,7 +169,9 @@ const AuthWrapper = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthWrapper />
+      <BrowserRouter>
+        <AuthWrapper />
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -23,6 +23,11 @@ export function RegistrationForm({ isSubmitting, setIsSubmitting, onRegistration
     e.preventDefault();
     
     // Validation
+    if (!registerName || !registerEmail || !registerPassword || !confirmPassword) {
+      toast.error("Por favor, preencha todos os campos");
+      return;
+    }
+    
     if (registerPassword !== confirmPassword) {
       toast.error("As senhas não conferem");
       return;
@@ -35,6 +40,7 @@ export function RegistrationForm({ isSubmitting, setIsSubmitting, onRegistration
     
     try {
       setIsSubmitting(true);
+      console.log('Registrando usuário:', registerEmail);
       
       // Create the user in Supabase Auth
       const authResult = await supabase.auth.signUp({
@@ -42,25 +48,19 @@ export function RegistrationForm({ isSubmitting, setIsSubmitting, onRegistration
         password: registerPassword,
         options: {
           data: {
-            nome: registerName
+            nome: registerName,
+            tipo_usuario: 'membro'
           }
         }
       });
       
       if (authResult.error) {
+        console.error('Erro no registro:', authResult.error);
         throw new Error(authResult.error.message);
       }
       
       if (authResult.data.user) {
-        // Create entry in users table with role 'membro' (discipulo)
-        const { error: userError } = await supabase.from('users').insert({
-          id: authResult.data.user.id,
-          nome: registerName,
-          email: registerEmail,
-          tipo_usuario: 'membro' // Default role is regular member/discipulo
-        });
-        
-        if (userError) throw new Error(userError.message);
+        console.log('Usuário criado com sucesso:', authResult.data.user.id);
         
         toast.success("Registro realizado com sucesso!", {
           description: "Você já pode fazer login com suas credenciais."
@@ -74,8 +74,17 @@ export function RegistrationForm({ isSubmitting, setIsSubmitting, onRegistration
         onRegistrationSuccess();
       }
     } catch (error: any) {
+      console.error('Erro no registro:', error);
+      
+      let errorMessage = "Ocorreu um erro ao registrar sua conta.";
+      if (error.message?.includes('already registered')) {
+        errorMessage = "Este e-mail já está registrado.";
+      } else if (error.message?.includes('Invalid email')) {
+        errorMessage = "E-mail inválido.";
+      }
+      
       toast.error("Falha ao criar conta", {
-        description: error.message || "Ocorreu um erro ao registrar sua conta."
+        description: errorMessage
       });
     } finally {
       setIsSubmitting(false);
@@ -100,6 +109,7 @@ export function RegistrationForm({ isSubmitting, setIsSubmitting, onRegistration
               value={registerName}
               onChange={(e) => setRegisterName(e.target.value)}
               required
+              disabled={isSubmitting}
             />
           </div>
           <div className="space-y-2">
@@ -111,6 +121,7 @@ export function RegistrationForm({ isSubmitting, setIsSubmitting, onRegistration
               value={registerEmail}
               onChange={(e) => setRegisterEmail(e.target.value)}
               required
+              disabled={isSubmitting}
             />
           </div>
           <div className="space-y-2">
@@ -122,6 +133,7 @@ export function RegistrationForm({ isSubmitting, setIsSubmitting, onRegistration
               value={registerPassword}
               onChange={(e) => setRegisterPassword(e.target.value)}
               required
+              disabled={isSubmitting}
             />
           </div>
           <div className="space-y-2">
@@ -133,6 +145,7 @@ export function RegistrationForm({ isSubmitting, setIsSubmitting, onRegistration
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              disabled={isSubmitting}
             />
           </div>
         </CardContent>

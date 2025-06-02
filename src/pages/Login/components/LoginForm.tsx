@@ -21,11 +21,17 @@ export function LoginForm({ isSubmitting, setIsSubmitting }: LoginFormProps) {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!email || !password) {
+      toast.error("Por favor, preencha todos os campos");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
+      console.log('Tentando fazer login com:', email);
       await signIn(email, password);
-      toast.success("Login realizado com sucesso!");
     } catch (error: any) {
+      console.error('Erro no login:', error);
       toast.error("Falha ao fazer login", { 
         description: error.message || "Verifique suas credenciais e tente novamente."
       });
@@ -53,12 +59,13 @@ export function LoginForm({ isSubmitting, setIsSubmitting }: LoginFormProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={isSubmitting}
             />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Senha</Label>
-              <Link to="/reset-password" className="text-xs text-corpovivo-600 hover:underline">
+              <Link to="/reset-password" className="text-xs text-blue-600 hover:underline">
                 Esqueceu a senha?
               </Link>
             </div>
@@ -69,6 +76,7 @@ export function LoginForm({ isSubmitting, setIsSubmitting }: LoginFormProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={isSubmitting}
             />
           </div>
         </CardContent>

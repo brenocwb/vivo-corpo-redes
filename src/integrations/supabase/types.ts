@@ -1,5 +1,3 @@
-export type UserRole = 'admin' | 'lider' | 'membro'; // Ou os novos termos
-
 export type Json =
   | string
   | number
@@ -251,6 +249,30 @@ export type Database = {
           },
         ]
       }
+      trigger_errors: {
+        Row: {
+          error_message: string | null
+          error_time: string | null
+          id: number
+          user_data: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          error_message?: string | null
+          error_time?: string | null
+          id?: number
+          user_data?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          error_message?: string | null
+          error_time?: string | null
+          id?: number
+          user_data?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           criado_em: string | null
@@ -268,7 +290,7 @@ export type Database = {
           id?: string
           nome: string
           senha?: string | null
-          tipo_usuario: string
+          tipo_usuario?: string
         }
         Update: {
           criado_em?: string | null
@@ -291,10 +313,84 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      error_logs: {
+        Row: {
+          error_message: string | null
+          error_time: string | null
+          id: number | null
+          user_data: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          error_message?: string | null
+          error_time?: string | null
+          id?: number | null
+          user_data?: never
+          user_id?: string | null
+        }
+        Update: {
+          error_message?: string | null
+          error_time?: string | null
+          id?: number | null
+          user_data?: never
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      safe_trigger_errors: {
+        Row: {
+          error_message: string | null
+          error_time: string | null
+          id: number | null
+          user_data: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          error_message?: string | null
+          error_time?: string | null
+          id?: number | null
+          user_data?: never
+          user_id?: string | null
+        }
+        Update: {
+          error_message?: string | null
+          error_time?: string | null
+          id?: number | null
+          user_data?: never
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_user_type: {
+        Args: { user_id: string }
+        Returns: string
+      }
+      insert_user_safely: {
+        Args: { p_email: string; p_nome: string; p_tipo_usuario?: string }
+        Returns: string
+      }
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
+      is_discipulador: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
+      log_error_manually: {
+        Args: { error_msg: string; additional_data?: Json }
+        Returns: undefined
+      }
+      sync_missing_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          user_email: string
+          status: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
