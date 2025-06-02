@@ -1,3 +1,5 @@
+export type UserRole = 'admin' | 'lider' | 'membro'; // Ou os novos termos
+
 export type Json =
   | string
   | number
