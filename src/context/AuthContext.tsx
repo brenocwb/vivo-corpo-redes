@@ -127,7 +127,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAdmin = user?.tipo_usuario === 'admin';
   const isDiscipulador = user?.tipo_usuario === 'discipulador';
   const isDiscipulo = user?.tipo_usuario === 'discipulo';
-  const getUserRole = () => user?.tipo_usuario as UserRole || null;
+  const getUserRole = (): UserRole => {
+  // Se manteve 'lider'/'membro' no banco:
+  return user?.tipo_usuario as UserRole;
+  
+  // Se mudou para 'discipulador'/'discipulo':
+  return user?.tipo_usuario === 'admin' ? 'admin' :
+         user?.tipo_usuario === 'discipulador' ? 'lider' :
+         'membro';
 
   // Efeito para gerenciar estado de autenticação
   useEffect(() => {
