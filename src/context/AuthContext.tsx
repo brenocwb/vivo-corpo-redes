@@ -1,47 +1,41 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-interface AuthUser {
-  id: string;
-  email: string;
-  nome: string;
-  tipo_usuario: string;
-  criado_em: string;
-  grupo_id?: string;
-  senha?: string;
-  avatar_url?: string;
-  role: string;
-  created_at: string;
-}
+import { User, UserRole } from '@/types';
 
 interface AuthContextType {
-  user: AuthUser | null;
+  user: User | null;
   session: Session | null;
   loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, userData: any) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
   isAdmin: boolean;
   isDiscipulador: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  signUp: (email: string, password: string, userData: any) => Promise<void>;
+  isDiscipulo: boolean;
+  getUserRole: () => UserRole | null;
+  resetPassword: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const isAdmin = user?.tipo_usuario === 'admin';
-  const isDiscipulador = user?.tipo_usuario === 'admin' || user?.tipo_usuario === 'discipulador' || user?.tipo_usuario === 'lider';
+  // Computed properties for roles
+  const isAdmin = user?.role === 'admin';
+  const isDiscipulador = user?.role === 'discipulador' || user?.role === 'lider' || user?.role === 'admin';
+  const isDiscipulo = user?.role === 'discipulo' || user?.role === 'membro';
+  
+  const getUserRole = (): UserRole | null => user?.role || null;
 
-  // Função para buscar dados do usuário
-  const fetchUserData = async (userId: string): Promise<AuthUser | null> => {
+  const fetchUserData = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: userData, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
@@ -49,31 +43,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Erro ao buscar dados do usuário:', error);
-        return null;
+        return;
       }
 
-      return {
-        ...data,
-        role: data.tipo_usuario,
-        created_at: data.criado_em
-      };
+      if (userData) {
+        const userObj: User = {
+          id: userData.id,
+          email: userData.email,
+          nome: userData.nome,
+          role: userData.tipo_usuario as UserRole,
+          grupo_id: userData.grupo_id,
+          avatar_url: userData.avatar_url,
+          created_at: userData.criado_em || userData.created_at
+        };
+        setUser(userObj);
+      }
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
-      return null;
     }
   };
 
   useEffect(() => {
-    // Configurar listener de mudanças de autenticação
+    // Get initial session
+    const getInitialSession = async () => {
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
+      setSession(initialSession);
+      if (initialSession?.user) {
+        await fetchUserData(initialSession.user.id);
+      }
+      setLoading(false);
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         
         if (session?.user) {
-          // Buscar dados completos do usuário
-          const userData = await fetchUserData(session.user.id);
-          setUser(userData);
+          await fetchUserData(session.user.id);
         } else {
           setUser(null);
         }
@@ -81,19 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     );
-
-    // Verificar sessão inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchUserData(session.user.id).then(userData => {
-          setUser(userData);
-          setSession(session);
-          setLoading(false);
-        });
-      } else {
-        setLoading(false);
-      }
-    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -107,38 +104,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        throw error;
+        console.error('Erro no login:', error);
+        toast.error('Erro no login', {
+          description: error.message,
+        });
+        return { error };
       }
 
       if (data.user) {
-        const userData = await fetchUserData(data.user.id);
-        if (userData) {
-          setUser(userData);
-          setSession(data.session);
-          toast.success('Login realizado com sucesso!');
-        } else {
-          throw new Error('Usuário não encontrado no sistema');
-        }
+        await fetchUserData(data.user.id);
+        toast.success('Login realizado com sucesso!');
       }
+
+      return { error: null };
     } catch (error: any) {
       console.error('Erro no login:', error);
-      throw error;
+      toast.error('Erro no login', {
+        description: error.message,
+      });
+      return { error };
     } finally {
       setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      setUser(null);
-      setSession(null);
-      toast.success('Logout realizado com sucesso!');
-    } catch (error: any) {
-      console.error('Erro no logout:', error);
-      toast.error('Erro ao fazer logout');
     }
   };
 
@@ -149,33 +135,94 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         options: {
-          data: {
-            nome: userData.nome,
-            tipo_usuario: userData.tipo_usuario || 'membro'
-          }
+          data: userData,
+          emailRedirectTo: `${window.location.origin}/`
         }
       });
 
-      if (error) throw error;
-      
-      toast.success('Cadastro realizado com sucesso!');
+      if (error) {
+        console.error('Erro no cadastro:', error);
+        toast.error('Erro no cadastro', {
+          description: error.message,
+        });
+        return { error };
+      }
+
+      toast.success('Cadastro realizado com sucesso!', {
+        description: 'Verifique seu email para confirmar a conta.',
+      });
+
+      return { error: null };
     } catch (error: any) {
       console.error('Erro no cadastro:', error);
-      throw error;
+      toast.error('Erro no cadastro', {
+        description: error.message,
+      });
+      return { error };
     } finally {
       setLoading(false);
     }
   };
 
-  const value = {
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Erro no logout:', error);
+        toast.error('Erro no logout', {
+          description: error.message,
+        });
+      } else {
+        setUser(null);
+        setSession(null);
+        toast.success('Logout realizado com sucesso!');
+      }
+    } catch (error: any) {
+      console.error('Erro no logout:', error);
+      toast.error('Erro no logout', {
+        description: error.message,
+      });
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        toast.error('Erro ao enviar email de recuperação', {
+          description: error.message,
+        });
+        return { error };
+      }
+
+      toast.success('Email de recuperação enviado!', {
+        description: 'Verifique sua caixa de entrada.',
+      });
+
+      return { error: null };
+    } catch (error: any) {
+      toast.error('Erro ao enviar email de recuperação', {
+        description: error.message,
+      });
+      return { error };
+    }
+  };
+
+  const value: AuthContextType = {
     user,
     session,
     loading,
+    signIn,
+    signUp,
+    signOut,
     isAdmin,
     isDiscipulador,
-    signIn,
-    signOut,
-    signUp,
+    isDiscipulo,
+    getUserRole,
+    resetPassword,
   };
 
   return (
@@ -185,10 +232,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};
