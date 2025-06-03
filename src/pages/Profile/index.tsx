@@ -3,210 +3,196 @@ import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, KeyRound, Mail, Users, Calendar, Shield } from 'lucide-react';
-import { toast } from 'sonner';
-import { formatDate } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { User, Mail, Calendar, Shield } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function Profile() {
   const { user } = useAuth();
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [nome, setNome] = useState(user?.nome || '');
   const [loading, setLoading] = useState(false);
-  
-  const handleChangePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      toast('As senhas não coincidem', {
-        description: 'A nova senha e a confirmação não são iguais.',
-        style: { backgroundColor: 'hsl(var(--destructive))' }
-      });
-      return;
-    }
-    
-    if (newPassword.length < 6) {
-      toast('Senha muito curta', {
-        description: 'A senha deve ter pelo menos 6 caracteres.',
-        style: { backgroundColor: 'hsl(var(--destructive))' }
-      });
-      return;
-    }
+
+  const handleSave = async () => {
+    if (!user) return;
     
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-      
-      if (error) throw error;
-      
-      toast('Senha alterada com sucesso', {
-        description: 'Sua senha foi atualizada.'
-      });
-      
-      setNewPassword('');
-      setConfirmPassword('');
-      setChangePasswordOpen(false);
-      
+      const { error } = await supabase
+        .from('users')
+        .update({ nome })
+        .eq('id', user.id);
+
+      if (error) {
+        toast.error('Erro ao atualizar perfil', {
+          description: error.message
+        });
+        return;
+      }
+
+      toast.success('Perfil atualizado com sucesso!');
+      setIsEditing(false);
     } catch (error: any) {
-      console.error('Erro ao alterar senha:', error);
-      toast('Erro ao alterar senha', {
-        description: error.message || 'Não foi possível alterar sua senha.',
-        style: { backgroundColor: 'hsl(var(--destructive))' }
+      toast.error('Erro ao atualizar perfil', {
+        description: error.message
       });
     } finally {
       setLoading(false);
     }
   };
-  
+
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'admin': return 'Administrador';
       case 'lider': return 'Líder';
+      case 'discipulador': return 'Discipulador';
       case 'membro': return 'Membro';
+      case 'discipulo': return 'Discípulo';
       default: return role;
     }
   };
-  
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin': return 'destructive';
+      case 'lider': return 'default';
+      case 'discipulador': return 'secondary';
+      default: return 'outline';
+    }
+  };
+
   if (!user) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-full">
-          <p>Carregando dados do usuário...</p>
+        <div className="flex items-center justify-center h-96">
+          <p>Carregando perfil...</p>
         </div>
       </Layout>
     );
   }
-  
+
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Meu Perfil</h1>
-        
-        <div className="grid gap-6">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Meu Perfil</h1>
+          <p className="text-muted-foreground">
+            Gerencie suas informações pessoais e configurações da conta.
+          </p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="mr-2 h-5 w-5" />
-                Informações do Usuário
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Informações Pessoais
               </CardTitle>
               <CardDescription>
-                Seus dados pessoais na plataforma Corpo Vivo
+                Suas informações básicas no sistema.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Nome</p>
-                  <p className="flex items-center">
-                    <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                    {user.nome}
-                  </p>
-                </div>
-                
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">E-mail</p>
-                  <p className="flex items-center">
-                    <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                    {user.email}
-                  </p>
-                </div>
-                
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Tipo de Usuário</p>
-                  <p className="flex items-center">
-                    <Shield className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      user.role === 'admin' ? 'bg-red-100 text-red-800' : 
-                      user.role === 'lider' ? 'bg-blue-100 text-blue-800' : 
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {getRoleLabel(user.role)}
-                    </span>
-                  </p>
-                </div>
-                
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Data de Cadastro</p>
-                  <p className="flex items-center">
-                    <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                    {formatDate(user.created_at)}
-                  </p>
-                </div>
-                
-                {user.grupo_id && (
-                  <div className="space-y-1 md:col-span-2">
-                    <p className="text-sm font-medium text-muted-foreground">Grupo</p>
-                    <p className="flex items-center">
-                      <Users className="mr-2 h-4 w-4 text-muted-foreground" />
-                      {/* Aqui poderia mostrar o nome do grupo, precisaria buscar do banco */}
-                      {user.grupo_id}
-                    </p>
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="nome">Nome</Label>
+                {isEditing ? (
+                  <Input
+                    id="nome"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    placeholder="Seu nome completo"
+                  />
+                ) : (
+                  <p className="p-2 bg-muted rounded-md">{user.nome}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email
+                </Label>
+                <p className="p-2 bg-muted rounded-md text-muted-foreground">{user.email}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Tipo de Usuário
+                </Label>
+                <Badge variant={getRoleBadgeVariant(user.role)}>
+                  {getRoleLabel(user.role)}
+                </Badge>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Membro desde
+                </Label>
+                <p className="p-2 bg-muted rounded-md text-muted-foreground">
+                  {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                {isEditing ? (
+                  <>
+                    <Button onClick={handleSave} disabled={loading}>
+                      {loading ? 'Salvando...' : 'Salvar'}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setIsEditing(false);
+                        setNome(user.nome);
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </>
+                ) : (
+                  <Button onClick={() => setIsEditing(true)}>
+                    Editar Perfil
+                  </Button>
                 )}
               </div>
             </CardContent>
-            <CardFooter>
-              <Button 
-                variant="outline" 
-                className="w-full md:w-auto"
-                onClick={() => setChangePasswordOpen(true)}
-              >
-                <KeyRound className="mr-2 h-4 w-4" />
-                Alterar Senha
-              </Button>
-            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Estatísticas</CardTitle>
+              <CardDescription>
+                Seu progresso na plataforma.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-muted rounded-md">
+                  <p className="text-2xl font-bold text-primary">0</p>
+                  <p className="text-sm text-muted-foreground">Encontros</p>
+                </div>
+                <div className="text-center p-4 bg-muted rounded-md">
+                  <p className="text-2xl font-bold text-primary">0</p>
+                  <p className="text-sm text-muted-foreground">Planos</p>
+                </div>
+              </div>
+              
+              <div className="text-center p-4 bg-muted rounded-md">
+                <p className="text-lg font-semibold">Status: Ativo</p>
+                <p className="text-sm text-muted-foreground">
+                  Participando ativamente da comunidade
+                </p>
+              </div>
+            </CardContent>
           </Card>
         </div>
       </div>
-      
-      <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Alterar Senha</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="new-password">Nova Senha</Label>
-              <Input 
-                id="new-password" 
-                type="password" 
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="●●●●●●"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="confirm-password">Confirmar Senha</Label>
-              <Input 
-                id="confirm-password" 
-                type="password" 
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="●●●●●●"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setChangePasswordOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleChangePassword}
-              disabled={loading}
-            >
-              {loading ? 'Alterando...' : 'Salvar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Layout>
   );
 }

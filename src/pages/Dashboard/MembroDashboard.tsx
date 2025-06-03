@@ -1,141 +1,170 @@
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { BookOpen, Users, MessageSquare, CalendarDays } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-
-const mockData = {
-  userName: 'Maria',
-  planoAtual: {
-    nome: 'Fundamentos da Fé',
-    progresso: 60,
-    proximaEtapa: 'Estudo da Oração',
-  },
-  proximoEncontro: {
-    data: '18/05/2025',
-    hora: '14:30',
-    discipulador: 'Pastor João',
-  },
-  grupo: {
-    nome: 'Vida Nova',
-    lider: 'Ana Costa',
-    diaEncontro: 'Quinta-feira',
-  },
-};
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { BookOpen, Calendar, Heart, Users } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function MembroDashboard() {
-  const [data, setData] = useState(mockData);
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    meuProgresso: 0,
+    proximosEncontros: 0,
+    meuGrupo: null,
+    planosAtivos: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user) return;
+
+      try {
+        // Buscar meu discipulado (como discípulo)
+        const { data: meuDiscipulado } = await supabase
+          .from('discipulados')
+          .select('*')
+          .eq('discipulo_id', user.id)
+          .single();
+
+        // Buscar meu grupo
+        const { data: meuGrupo } = await supabase
+          .from('grupos')
+          .select('nome')
+          .eq('id', user.grupo_id)
+          .single();
+
+        // Buscar progresso dos planos
+        const { data: progresso } = await supabase
+          .from('progresso_planos')
+          .select('*')
+          .eq('user_id', user.id);
+
+        setStats({
+          meuProgresso: progresso?.length || 0,
+          proximosEncontros: 0,
+          meuGrupo: meuGrupo?.nome || null,
+          planosAtivos: progresso?.length || 0
+        });
+      } catch (error) {
+        console.error('Erro ao buscar estatísticas:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Meu Dashboard</h1>
+          <p className="text-muted-foreground">Bem-vindo de volta, {user?.nome}!</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-muted rounded w-20"></div>
+                <div className="h-8 bg-muted rounded w-16"></div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-1">Olá, {data.userName}!</h1>
-        <p className="text-muted-foreground">Bem-vindo à sua jornada de discipulado</p>
+        <h1 className="text-2xl font-bold tracking-tight">Meu Dashboard</h1>
+        <p className="text-muted-foreground">
+          Bem-vindo de volta, {user?.nome}! Continue sua jornada de crescimento espiritual.
+        </p>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Meu Progresso
+            </CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.meuProgresso}%</div>
+            <p className="text-xs text-muted-foreground">
+              Planos de discipulado
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Próximos Encontros
+            </CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.proximosEncontros}</div>
+            <p className="text-xs text-muted-foreground">
+              Esta semana
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Meu Grupo
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold truncate">
+              {stats.meuGrupo || 'Não definido'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Comunidade de fé
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-corpovivo-600" />
-              Seu Plano de Discipulado
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>Meu Plano de Crescimento</CardTitle>
+            <CardDescription>
+              Acompanhe seu desenvolvimento espiritual
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8 text-muted-foreground">
+              <BookOpen className="mx-auto h-12 w-12 mb-4" />
+              <p>Nenhum plano ativo</p>
+              <p className="text-sm">Converse com seu discipulador para iniciar um plano</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Atividades Recentes</CardTitle>
+            <CardDescription>
+              Suas últimas interações na plataforma
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-1">
-                  <p className="font-medium">{data.planoAtual.nome}</p>
-                  <p className="text-sm text-muted-foreground">{data.planoAtual.progresso}%</p>
-                </div>
-                <Progress value={data.planoAtual.progresso} className="h-2" />
+              <div className="text-center py-4 text-muted-foreground">
+                <Heart className="mx-auto h-8 w-8 mb-2" />
+                <p className="text-sm">Suas atividades aparecerão aqui</p>
               </div>
-              
-              <div className="bg-muted p-4 rounded-md">
-                <p className="font-medium mb-1">Próxima etapa</p>
-                <p className="text-sm text-muted-foreground">{data.planoAtual.proximaEtapa}</p>
-              </div>
-              
-              <Button className="w-full" variant="outline">
-                Ver plano completo
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5 text-corpovivo-600" />
-              Próximo Encontro
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-muted p-4 rounded-md mb-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium text-lg">
-                    {data.proximoEncontro.data} às {data.proximoEncontro.hora}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Com {data.proximoEncontro.discipulador}
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Confirmar
-                </Button>
-              </div>
-            </div>
-            <Button className="w-full" variant="outline">
-              Ver histórico de encontros
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-corpovivo-600" />
-              Seu Grupo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="bg-muted p-4 rounded-md">
-                <p className="font-medium">{data.grupo.nome}</p>
-                <p className="text-sm text-muted-foreground">
-                  Líder: {data.grupo.lider}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Encontros: {data.grupo.diaEncontro}
-                </p>
-              </div>
-              <Button className="w-full" variant="outline">
-                Ver detalhes do grupo
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-corpovivo-600" />
-              Compartilhe
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Button className="w-full" variant="secondary">
-                Enviar pedido de oração
-              </Button>
-              <Button className="w-full" variant="secondary">
-                Compartilhar testemunho
-              </Button>
-              <Button className="w-full" variant="outline">
-                Ver comunidade
-              </Button>
             </div>
           </CardContent>
         </Card>

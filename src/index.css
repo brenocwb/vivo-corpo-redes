@@ -43,6 +43,18 @@
     --sidebar-accent-foreground: 220 40% 15%;
     --sidebar-border: 220 20% 90%;
     --sidebar-ring: 201 100% 45%;
+
+    /* Cores específicas do Corpo Vivo */
+    --corpovivo-50: 210 100% 97%;
+    --corpovivo-100: 210 100% 94%;
+    --corpovivo-200: 210 100% 87%;
+    --corpovivo-300: 210 100% 78%;
+    --corpovivo-400: 210 100% 66%;
+    --corpovivo-500: 210 100% 54%;
+    --corpovivo-600: 201 100% 45%;
+    --corpovivo-700: 201 100% 38%;
+    --corpovivo-800: 201 100% 32%;
+    --corpovivo-900: 201 100% 26%;
   }
  
   .dark {
@@ -103,3 +115,37 @@
     @apply bg-corpovivo-100 text-corpovivo-700 font-medium;
   }
 }
+
+/* Classes utilitárias para cores do Corpo Vivo */
+.text-corpovivo-50 { color: hsl(var(--corpovivo-50)); }
+.text-corpovivo-100 { color: hsl(var(--corpovivo-100)); }
+.text-corpovivo-200 { color: hsl(var(--corpovivo-200)); }
+.text-corpovivo-300 { color: hsl(var(--corpovivo-300)); }
+.text-corpovivo-400 { color: hsl(var(--corpovivo-400)); }
+.text-corpovivo-500 { color: hsl(var(--corpovivo-500)); }
+.text-corpovivo-600 { color: hsl(var(--corpovivo-600)); }
+.text-corpovivo-700 { color: hsl(var(--corpovivo-700)); }
+.text-corpovivo-800 { color: hsl(var(--corpovivo-800)); }
+.text-corpovivo-900 { color: hsl(var(--corpovivo-900)); }
+
+.bg-corpovivo-50 { background-color: hsl(var(--corpovivo-50)); }
+.bg-corpovivo-100 { background-color: hsl(var(--corpovivo-100)); }
+.bg-corpovivo-200 { background-color: hsl(var(--corpovivo-200)); }
+.bg-corpovivo-300 { background-color: hsl(var(--corpovivo-300)); }
+.bg-corpovivo-400 { background-color: hsl(var(--corpovivo-400)); }
+.bg-corpovivo-500 { background-color: hsl(var(--corpovivo-500)); }
+.bg-corpovivo-600 { background-color: hsl(var(--corpovivo-600)); }
+.bg-corpovivo-700 { background-color: hsl(var(--corpovivo-700)); }
+.bg-corpovivo-800 { background-color: hsl(var(--corpovivo-800)); }
+.bg-corpovivo-900 { background-color: hsl(var(--corpovivo-900)); }
+
+.hover\:bg-corpovivo-50:hover { background-color: hsl(var(--corpovivo-50)); }
+.hover\:bg-corpovivo-100:hover { background-color: hsl(var(--corpovivo-100)); }
+.hover\:bg-corpovivo-200:hover { background-color: hsl(var(--corpovivo-200)); }
+.hover\:bg-corpovivo-300:hover { background-color: hsl(var(--corpovivo-300)); }
+.hover\:bg-corpovivo-400:hover { background-color: hsl(var(--corpovivo-400)); }
+.hover\:bg-corpovivo-500:hover { background-color: hsl(var(--corpovivo-500)); }
+.hover\:bg-corpovivo-600:hover { background-color: hsl(var(--corpovivo-600)); }
+.hover\:bg-corpovivo-700:hover { background-color: hsl(var(--corpovivo-700)); }
+.hover\:bg-corpovivo-800:hover { background-color: hsl(var(--corpovivo-800)); }
+.hover\:bg-corpovivo-900:hover { background-color: hsl(var(--corpovivo-900)); }

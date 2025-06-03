@@ -16,6 +16,8 @@ export interface Grupo {
   nome: string;
   descricao?: string;
   lider_id: string;
+  local?: string;
+  dia_semana?: string;
   membros?: User[];
   created_at: string;
 }

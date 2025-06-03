@@ -1,126 +1,213 @@
 
 import { useState, useEffect } from 'react';
-import { Users, Folder, BookOpen, CalendarDays } from 'lucide-react';
-import { StatCard } from '@/components/ui/dashboard/StatCard';
-import { RecentActivities } from '@/components/ui/dashboard/RecentActivities';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, BookOpen, Calendar, TrendingUp } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardStats } from '@/types';
 
-const mockDashboardData: DashboardStats = {
-  totalDiscipulos: 48,
-  totalLideres: 12,
-  totalGrupos: 8,
-  totalEncontros: 124,
-  crescimentoMensal: [
-    { mes: 'Jan', quantidade: 5 },
-    { mes: 'Fev', quantidade: 4 },
-    { mes: 'Mar', quantidade: 7 },
-    { mes: 'Abr', quantidade: 3 },
-    { mes: 'Mai', quantidade: 6 },
-    { mes: 'Jun', quantidade: 8 },
-  ]
-};
-
-const mockActivities = [
-  {
-    id: '1',
-    title: 'Novo encontro registrado',
-    description: 'João registrou encontro com Maria',
-    timestamp: 'Há 2 horas',
-    type: 'encontro' as const
-  },
-  {
-    id: '2',
-    title: 'Novo pedido de oração',
-    description: 'Pedro solicitou oração por saúde',
-    timestamp: 'Há 5 horas',
-    type: 'oracao' as const
-  },
-  {
-    id: '3',
-    title: 'Testemunho compartilhado',
-    description: 'Ana compartilhou um testemunho de cura',
-    timestamp: 'Há 1 dia',
-    type: 'testemunho' as const
-  },
-  {
-    id: '4',
-    title: 'Etapa de plano concluída',
-    description: 'Lucas concluiu a etapa 3 de Fundamentos da Fé',
-    timestamp: 'Há 2 dias',
-    type: 'plano' as const
-  }
-];
-
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats>(mockDashboardData);
-  const [activities, setActivities] = useState(mockActivities);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalDiscipulos: 0,
+    totalLideres: 0,
+    totalGrupos: 0,
+    totalEncontros: 0,
+    crescimentoMensal: []
+  });
+  const [loading, setLoading] = useState(true);
 
-  // Em uma implementação real, isso viria do Supabase
   useEffect(() => {
-    // Carregaria os dados reais do dashboard aqui
+    const fetchStats = async () => {
+      try {
+        // Buscar estatísticas dos usuários
+        const { data: usuarios } = await supabase
+          .from('users')
+          .select('tipo_usuario');
+
+        // Buscar grupos
+        const { data: grupos } = await supabase
+          .from('grupos')
+          .select('id');
+
+        // Buscar encontros
+        const { data: encontros } = await supabase
+          .from('encontros')
+          .select('id');
+
+        // Buscar discipulados
+        const { data: discipulados } = await supabase
+          .from('discipulados')
+          .select('id');
+
+        if (usuarios) {
+          const lideres = usuarios.filter(u => ['admin', 'lider', 'discipulador'].includes(u.tipo_usuario)).length;
+          const discipulos = usuarios.filter(u => ['discipulo', 'membro'].includes(u.tipo_usuario)).length;
+
+          setStats({
+            totalDiscipulos: discipulos,
+            totalLideres: lideres,
+            totalGrupos: grupos?.length || 0,
+            totalEncontros: encontros?.length || 0,
+            crescimentoMensal: []
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao buscar estatísticas:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard Administrativo</h1>
+          <p className="text-muted-foreground">Visão geral da plataforma Corpo Vivo</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 bg-muted rounded w-20"></div>
+                <div className="h-4 w-4 bg-muted rounded"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-muted rounded w-16 mb-1"></div>
+                <div className="h-3 bg-muted rounded w-24"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-1">Dashboard Administrativo</h1>
-        <p className="text-muted-foreground">Visão geral da plataforma Corpo Vivo</p>
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard Administrativo</h1>
+        <p className="text-muted-foreground">
+          Visão geral da plataforma Corpo Vivo
+        </p>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="Total de Discípulos" 
-          value={stats.totalDiscipulos} 
-          icon={<Users size={20} />}
-          trend={{ value: 12, positive: true }}
-        />
-        <StatCard 
-          title="Líderes" 
-          value={stats.totalLideres} 
-          icon={<Users size={20} />}
-        />
-        <StatCard 
-          title="Grupos" 
-          value={stats.totalGrupos} 
-          icon={<Folder size={20} />}
-        />
-        <StatCard 
-          title="Encontros Registrados" 
-          value={stats.totalEncontros} 
-          icon={<CalendarDays size={20} />}
-          trend={{ value: 8, positive: true }}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle>Crescimento Mensal</CardTitle>
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total de Discípulos
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={stats.crescimentoMensal}
-                margin={{
-                  top: 10,
-                  right: 10,
-                  left: 0,
-                  bottom: 0,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="mes" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="quantidade" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalDiscipulos}</div>
+            <p className="text-xs text-muted-foreground">
+              Membros ativos na plataforma
+            </p>
           </CardContent>
         </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Líderes e Discipuladores
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalLideres}</div>
+            <p className="text-xs text-muted-foreground">
+              Líderes servindo a comunidade
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Grupos Ativos
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalGrupos}</div>
+            <p className="text-xs text-muted-foreground">
+              Grupos de comunhão
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Encontros Realizados
+            </CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalEncontros}</div>
+            <p className="text-xs text-muted-foreground">
+              Este mês
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-        <RecentActivities activities={activities} />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Visão Geral</CardTitle>
+            <CardDescription>
+              Resumo das atividades da plataforma
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Usuários Ativos</span>
+                <span className="text-sm text-muted-foreground">
+                  {stats.totalDiscipulos + stats.totalLideres}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Taxa de Crescimento</span>
+                <span className="text-sm text-green-600">+12%</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Engajamento</span>
+                <span className="text-sm text-muted-foreground">Alto</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Ações Rápidas</CardTitle>
+            <CardDescription>
+              Tarefas administrativas importantes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex items-center p-2 rounded-md bg-muted">
+                <BookOpen className="h-4 w-4 mr-2" />
+                <span className="text-sm">Revisar novos planos</span>
+              </div>
+              <div className="flex items-center p-2 rounded-md bg-muted">
+                <Users className="h-4 w-4 mr-2" />
+                <span className="text-sm">Aprovar novos membros</span>
+              </div>
+              <div className="flex items-center p-2 rounded-md bg-muted">
+                <Calendar className="h-4 w-4 mr-2" />
+                <span className="text-sm">Agendar reunião de líderes</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
