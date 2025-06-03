@@ -18,7 +18,7 @@ export function SidebarUserProfile() {
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate text-sm">{user.nome}</p>
-        <p className="text-xs text-muted-foreground capitalize">{user.tipo_usuario}</p>
+        <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
       </div>
     </div>
   );

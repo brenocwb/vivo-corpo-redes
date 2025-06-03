@@ -12,9 +12,9 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, userData: any) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  isAdmin: boolean;
-  isDiscipulador: boolean;
-  isDiscipulo: boolean;
+  isAdmin: () => boolean;
+  isDiscipulador: () => boolean;
+  isDiscipulo: () => boolean;
   getUserRole: () => UserRole | null;
   resetPassword: (email: string) => Promise<{ error: any }>;
 }
@@ -26,10 +26,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Computed properties for roles
-  const isAdmin = user?.role === 'admin';
-  const isDiscipulador = user?.role === 'discipulador' || user?.role === 'lider' || user?.role === 'admin';
-  const isDiscipulo = user?.role === 'discipulo' || user?.role === 'membro';
+  // Role check functions
+  const isAdmin = (): boolean => user?.role === 'admin';
+  const isDiscipulador = (): boolean => user?.role === 'discipulador' || user?.role === 'lider' || user?.role === 'admin';
+  const isDiscipulo = (): boolean => user?.role === 'discipulo' || user?.role === 'membro';
   
   const getUserRole = (): UserRole | null => user?.role || null;
 
@@ -53,8 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           nome: userData.nome,
           role: userData.tipo_usuario as UserRole,
           grupo_id: userData.grupo_id,
-          avatar_url: userData.avatar_url,
-          created_at: userData.criado_em || userData.created_at
+          avatar_url: userData.avatar_url || undefined,
+          created_at: userData.criado_em || new Date().toISOString()
         };
         setUser(userObj);
       }
