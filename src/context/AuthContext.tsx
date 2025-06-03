@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           nome: userData.nome,
           role: userData.tipo_usuario as UserRole,
           grupo_id: userData.grupo_id,
-          avatar_url: userData.avatar_url || undefined,
           created_at: userData.criado_em || new Date().toISOString()
         };
         setUser(userObj);
