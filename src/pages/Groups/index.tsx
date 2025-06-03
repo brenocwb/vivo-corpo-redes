@@ -10,9 +10,15 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+interface GrupoWithLider extends Grupo {
+  lider?: {
+    nome: string;
+  };
+}
+
 export default function Groups() {
   const { user, isAdmin } = useAuth();
-  const [grupos, setGrupos] = useState<Grupo[]>([]);
+  const [grupos, setGrupos] = useState<GrupoWithLider[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchGroups = async () => {

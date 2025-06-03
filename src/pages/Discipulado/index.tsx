@@ -22,8 +22,8 @@ export default function Discipulado() {
         .from('discipulados')
         .select(`
           *,
-          discipulador:users!discipulados_discipulador_id_fkey(id, nome, email),
-          discipulo:users!discipulados_discipulo_id_fkey(id, nome, email)
+          discipulador:users!discipulados_discipulador_id_fkey(id, nome, email, tipo_usuario, criado_em),
+          discipulo:users!discipulados_discipulo_id_fkey(id, nome, email, tipo_usuario, criado_em)
         `);
 
       // Se não for admin, filtrar apenas os discipulados relacionados ao usuário
@@ -41,8 +41,20 @@ export default function Discipulado() {
           discipulador_id: item.discipulador_id,
           discipulo_id: item.discipulo_id,
           created_at: item.criado_em,
-          discipulador: item.discipulador,
-          discipulo: item.discipulo
+          discipulador: item.discipulador ? {
+            id: item.discipulador.id,
+            email: item.discipulador.email,
+            nome: item.discipulador.nome,
+            role: item.discipulador.tipo_usuario as any,
+            created_at: item.discipulador.criado_em
+          } : undefined,
+          discipulo: item.discipulo ? {
+            id: item.discipulo.id,
+            email: item.discipulo.email,
+            nome: item.discipulo.nome,
+            role: item.discipulo.tipo_usuario as any,
+            created_at: item.discipulo.criado_em
+          } : undefined
         }));
         setDiscipulados(formattedDiscipulados);
       }
