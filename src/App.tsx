@@ -15,8 +15,9 @@ import Profile from "./pages/Profile";
 import Groups from "./pages/Groups";
 import Discipulado from "./pages/Discipulado";
 import AdminUsers from "./pages/Admin/Users";
-import UserManagementPage from "./pages/Admin/Users/UserManagementPage";
 import Planos from "./pages/Planos";
+import Comunidade from "./pages/Comunidade";
+import Configuracoes from "./pages/Configuracoes";
 
 const queryClient = new QueryClient();
 
@@ -56,7 +57,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
   
-  if (!isAdmin) {
+  if (!isAdmin()) {
     console.log('Usuário não é admin, redirecionando para dashboard');
     return <Navigate to="/dashboard" replace />;
   }
@@ -80,7 +81,7 @@ const DiscipuladorOrAdminRoute = ({ children }: { children: React.ReactNode }) =
     return <Navigate to="/login" replace />;
   }
   
-  if (!isAdmin && !isDiscipulador) {
+  if (!isAdmin() && !isDiscipulador()) {
     console.log('Usuário não tem permissão, redirecionando para dashboard');
     return <Navigate to="/dashboard" replace />;
   }
@@ -148,11 +149,21 @@ const AuthWrapper = () => {
             <Planos />
           </ProtectedRoute>
         } />
+        <Route path="/comunidade" element={
+          <ProtectedRoute>
+            <Comunidade />
+          </ProtectedRoute>
+        } />
         
         {/* Admin routes */}
         <Route path="/admin/usuarios" element={
           <AdminRoute>
-            <UserManagementPage />
+            <AdminUsers />
+          </AdminRoute>
+        } />
+        <Route path="/configuracoes" element={
+          <AdminRoute>
+            <Configuracoes />
           </AdminRoute>
         } />
         

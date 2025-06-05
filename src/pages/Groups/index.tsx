@@ -28,7 +28,7 @@ export default function Groups() {
         .from('grupos')
         .select(`
           *,
-          lider:users!grupos_lider_id_fkey(nome)
+          lider:users(nome)
         `)
         .order('nome', { ascending: true });
 
@@ -42,7 +42,7 @@ export default function Groups() {
           local: group.local,
           dia_semana: group.dia_semana,
           created_at: group.criado_em,
-          lider: group.lider
+          lider: Array.isArray(group.lider) ? group.lider[0] : group.lider
         }));
         setGrupos(formattedGroups);
       }
